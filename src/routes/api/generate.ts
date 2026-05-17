@@ -51,7 +51,7 @@ export const Route = createFileRoute("/api/generate")({
         const apiKey = process.env.ANTHROPIC_API_KEY;
         if (!apiKey) {
           return Response.json(
-            { error: "Server is missing ANTHROPIC_API_KEY." },
+            { error: "O servidor não tem ANTHROPIC_API_KEY configurada." },
             { status: 500 },
           );
         }
@@ -60,13 +60,13 @@ export const Route = createFileRoute("/api/generate")({
         try {
           payload = await request.json();
         } catch {
-          return Response.json({ error: "Invalid JSON body." }, { status: 400 });
+          return Response.json({ error: "Corpo do pedido inválido." }, { status: 400 });
         }
 
         const parsed = RequestSchema.safeParse(payload);
         if (!parsed.success) {
           return Response.json(
-            { error: parsed.error.issues[0]?.message ?? "Invalid request." },
+            { error: parsed.error.issues[0]?.message ?? "Pedido inválido." },
             { status: 400 },
           );
         }
@@ -99,18 +99,18 @@ export const Route = createFileRoute("/api/generate")({
             const upstreamMsg = result.body.error?.message;
             if (result.status === 401) {
               return Response.json(
-                { error: "Anthropic API key is invalid." },
+                { error: "Chave da API Anthropic inválida." },
                 { status: 500 },
               );
             }
             if (result.status === 429) {
               return Response.json(
-                { error: "Rate limit reached. Please try again shortly." },
+                { error: "Limite de pedidos atingido. Tenta novamente daqui a pouco." },
                 { status: 429 },
               );
             }
             return Response.json(
-              { error: upstreamMsg ?? "AI service returned an error." },
+              { error: upstreamMsg ?? "O serviço de IA devolveu um erro." },
               { status: 502 },
             );
           }
@@ -119,7 +119,7 @@ export const Route = createFileRoute("/api/generate")({
         } catch (err) {
           console.error("generate error", err);
           return Response.json(
-            { error: "AI service is currently unavailable." },
+            { error: "O serviço de IA está indisponível de momento." },
             { status: 503 },
           );
         }

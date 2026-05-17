@@ -74,12 +74,12 @@ function AgileAIPage() {
       });
       const data = (await res.json()) as { output?: string; error?: string };
       if (!res.ok) {
-        setError(data.error ?? "Something went wrong.");
+        setError(data.error ?? "Ocorreu um erro inesperado.");
       } else {
         setOutput(data.output ?? "");
       }
     } catch {
-      setError("Network error. Please try again.");
+      setError("Erro de rede. Tenta novamente.");
     } finally {
       setLoading(false);
     }
@@ -92,7 +92,7 @@ function AgileAIPage() {
       setCopied(true);
       setTimeout(() => setCopied(false), 1800);
     } catch {
-      setError("Copy failed.");
+      setError("Falha ao copiar.");
     }
   }
 
@@ -106,7 +106,7 @@ function AgileAIPage() {
           <div>
             <h1 className="text-xl font-semibold tracking-tight">AgileAI Assistant</h1>
             <p className="text-xs text-muted-foreground">
-              AI co-pilot for Agile &amp; DevOps teams
+              Copiloto de IA para equipas Agile &amp; DevOps
             </p>
           </div>
         </div>
@@ -116,7 +116,7 @@ function AgileAIPage() {
         {/* Feature selector */}
         <aside className="lg:sticky lg:top-6 lg:self-start">
           <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-            Features
+            Funcionalidades
           </h2>
           <ul className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-1">
             {FEATURES.map((f) => {
@@ -147,7 +147,7 @@ function AgileAIPage() {
                       <span className="text-sm font-medium">{f.name}</span>
                       {active && (
                         <span className="ml-auto rounded-full bg-primary px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-primary-foreground">
-                          Active
+                          Ativo
                         </span>
                       )}
                     </div>
@@ -176,7 +176,7 @@ function AgileAIPage() {
             </div>
 
             <label htmlFor="ai-input" className="sr-only">
-              Input
+              Descrição
             </label>
             <textarea
               id="ai-input"
@@ -192,7 +192,7 @@ function AgileAIPage() {
 
             <div className="mt-2 flex flex-wrap items-center justify-between gap-3">
               <p className="text-xs text-muted-foreground">
-                {charCount.toLocaleString()} chars · {wordCount.toLocaleString()} words
+                {charCount.toLocaleString("pt-PT")} caracteres · {wordCount.toLocaleString("pt-PT")} palavras
               </p>
               <button
                 type="button"
@@ -203,12 +203,12 @@ function AgileAIPage() {
                 {loading ? (
                   <>
                     <Loader2 className="h-4 w-4 animate-spin" />
-                    Generating…
+                    A gerar…
                   </>
                 ) : (
                   <>
                     <Sparkles className="h-4 w-4" />
-                    Generate
+                    Gerar
                   </>
                 )}
               </button>
@@ -218,7 +218,7 @@ function AgileAIPage() {
               <div className="mt-3 rounded-md border border-primary/40 bg-primary/10 px-3 py-2.5 text-sm">
                 <p className="font-medium text-foreground">{validation.title}</p>
                 <p className="mt-1.5 text-xs uppercase tracking-wider text-muted-foreground">
-                  What I still need
+                  O que ainda preciso
                 </p>
                 <ul className="mt-1 list-disc space-y-1 pl-5 text-sm text-foreground/90">
                   {validation.hints.map((h, i) => (
@@ -238,7 +238,7 @@ function AgileAIPage() {
           {/* Output */}
           <div className="rounded-xl border border-border bg-card/50">
             <div className="flex items-center justify-between border-b border-border/70 px-5 py-3">
-              <h3 className="text-sm font-semibold">Output</h3>
+              <h3 className="text-sm font-semibold">Resultado</h3>
               <button
                 type="button"
                 onClick={handleCopy}
@@ -248,12 +248,12 @@ function AgileAIPage() {
                 {copied ? (
                   <>
                     <Check className="h-3.5 w-3.5 text-primary" />
-                    Copied
+                    Copiado
                   </>
                 ) : (
                   <>
                     <ClipboardCopy className="h-3.5 w-3.5" />
-                    Copy
+                    Copiar
                   </>
                 )}
               </button>
@@ -262,7 +262,7 @@ function AgileAIPage() {
               {loading && !output ? (
                 <p className="flex items-center gap-2 text-sm text-muted-foreground">
                   <Loader2 className="h-4 w-4 animate-spin" />
-                  Thinking…
+                  A pensar…
                 </p>
               ) : output ? (
                 <article className="markdown-output">
@@ -270,8 +270,8 @@ function AgileAIPage() {
                 </article>
               ) : (
                 <p className="text-sm text-muted-foreground">
-                  Your AI-generated result will appear here. Pick a feature, paste your
-                  context, and hit Generate.
+                  O resultado gerado pela IA vai aparecer aqui. Escolhe uma funcionalidade,
+                  cola o teu contexto e carrega em Gerar.
                 </p>
               )}
             </div>
