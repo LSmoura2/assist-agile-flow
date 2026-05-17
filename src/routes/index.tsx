@@ -19,6 +19,7 @@ import {
   PLACEHOLDERS,
   type FeatureId,
 } from "@/lib/prompts";
+import { validateInput } from "@/lib/validate-input";
 
 export const Route = createFileRoute("/")({
   component: AgileAIPage,
@@ -39,6 +40,7 @@ function AgileAIPage() {
   const [output, setOutput] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [validation, setValidation] = useState<{ title: string; hints: string[] } | null>(null);
   const [copied, setCopied] = useState(false);
 
   const activeFeature = useMemo(
@@ -53,7 +55,14 @@ function AgileAIPage() {
   );
 
   async function handleGenerate() {
-    if (!input.trim() || loading) return;
+    if (loading) return;
+    const check = validateInput(feature, input);
+    if (!check.ok) {
+      setValidation({ title: check.title, hints: check.hints });
+      setError(null);
+      return;
+    }
+    setValidation(null);
     setLoading(true);
     setError(null);
     setOutput("");
@@ -117,7 +126,10 @@ function AgileAIPage() {
                 <li key={f.id}>
                   <button
                     type="button"
-                    onClick={() => setFeature(f.id)}
+                    onClick={() => {
+                      setFeature(f.id);
+                      setValidation(null);
+                    }}
                     className={[
                       "group flex w-full flex-col gap-1 rounded-lg border p-3 text-left transition-colors",
                       active
@@ -169,7 +181,10 @@ function AgileAIPage() {
             <textarea
               id="ai-input"
               value={input}
-              onChange={(e) => setInput(e.target.value)}
+              onChange={(e) => {
+                setInput(e.target.value);
+                if (validation) setValidation(null);
+              }}
               placeholder={PLACEHOLDERS[feature]}
               rows={10}
               className="w-full resize-y rounded-lg border border-input bg-background px-3 py-2.5 text-sm leading-relaxed text-foreground placeholder:text-muted-foreground/70 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
@@ -182,7 +197,7 @@ function AgileAIPage() {
               <button
                 type="button"
                 onClick={handleGenerate}
-                disabled={loading || !input.trim()}
+                disabled={loading}
                 className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {loading ? (
@@ -198,6 +213,20 @@ function AgileAIPage() {
                 )}
               </button>
             </div>
+
+            {validation && (
+              <div className="mt-3 rounded-md border border-primary/40 bg-primary/10 px-3 py-2.5 text-sm">
+                <p className="font-medium text-foreground">{validation.title}</p>
+                <p className="mt-1.5 text-xs uppercase tracking-wider text-muted-foreground">
+                  What I still need
+                </p>
+                <ul className="mt-1 list-disc space-y-1 pl-5 text-sm text-foreground/90">
+                  {validation.hints.map((h, i) => (
+                    <li key={i} className="whitespace-pre-line">{h}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
 
             {error && (
               <div className="mt-3 rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive-foreground">
