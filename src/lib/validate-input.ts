@@ -40,84 +40,85 @@ export function validateInput(feature: FeatureId, raw: string): ValidationResult
   if (!input) {
     return {
       ok: false,
-      title: "Please enter some context before generating.",
-      hints: ["The input field is empty — add a description of what you need."],
+      title: "Introduz algum contexto antes de gerar.",
+      hints: ["O campo está vazio — adiciona uma descrição do que precisas."],
     };
   }
 
   if (input.length < MIN_CHARS[feature] || wordCount(input) < MIN_WORDS[feature]) {
     return {
       ok: false,
-      title: "This input is too short to produce a useful result.",
+      title: "O input é demasiado curto para produzir um resultado útil.",
       hints: featureHints(feature),
     };
   }
 
-  // Feature-specific structural checks
   switch (feature) {
     case "backlog": {
       if (lineCount(input) < 2) {
         return {
           ok: false,
-          title: "Backlog needs at least 2 items (one per line).",
+          title: "O backlog precisa de pelo menos 2 itens (um por linha).",
           hints: [
-            "Paste each backlog item on its own line.",
-            "Example:\n- Add login with Google\n- Fix checkout bug",
+            "Cola cada item do backlog na sua própria linha.",
+            "Exemplo:\n- Adicionar login com Google\n- Corrigir bug no checkout",
           ],
         };
       }
       break;
     }
     case "sprint": {
-      const hasCapacity = /\b\d+\s*(sp|story\s*points?|points?|pts?)\b/i.test(input) ||
+      const hasCapacity =
+        /\b\d+\s*(sp|story\s*points?|pontos?|pts?)\b/i.test(input) ||
+        /capacidade\s*[:=]?\s*\d+/i.test(input) ||
         /capacity\s*[:=]?\s*\d+/i.test(input);
       if (!hasCapacity) {
         return {
           ok: false,
-          title: "Sprint context is missing team capacity.",
+          title: "Falta indicar a capacidade da equipa no contexto do sprint.",
           hints: [
-            'Include capacity in story points, e.g. "Capacity: 40 SP".',
-            "List the candidate backlog items with their estimates.",
+            'Inclui a capacidade em story points, ex.: "Capacidade: 40 SP".',
+            "Lista os itens candidatos com as respetivas estimativas.",
           ],
         };
       }
       if (lineCount(input) < 3) {
         return {
           ok: false,
-          title: "Sprint context needs more detail.",
+          title: "O contexto do sprint precisa de mais detalhe.",
           hints: [
-            "Add the list of candidate backlog items with estimates.",
-            "Mention any constraints or dependencies that affect scope.",
+            "Adiciona a lista de itens candidatos com estimativas.",
+            "Menciona restrições ou dependências que afetem o âmbito.",
           ],
         };
       }
       break;
     }
     case "release": {
-      const mentionsFeatures = /\b(feature|module|story|epic|ticket)s?\b/i.test(input);
-      const mentionsStatus = /\b(test|tested|qa|bug|defect|coverage|passing|failing|blocker)s?\b/i.test(input);
+      const mentionsFeatures = /\b(funcionalidade|feature|módulo|story|epic|ticket)s?\b/i.test(input);
+      const mentionsStatus = /\b(test|teste|testes|qa|bug|defeito|cobertura|passa|falha|bloqueador|blocker)s?\b/i.test(input);
       if (!mentionsFeatures || !mentionsStatus) {
         return {
           ok: false,
-          title: "Release context is missing key information.",
+          title: "Falta informação chave no contexto da release.",
           hints: [
-            "List the features included in the release.",
-            "Describe the test status (coverage, passing/failing).",
-            "Mention any known bugs or blockers.",
+            "Lista as funcionalidades incluídas na release.",
+            "Descreve o estado dos testes (cobertura, passa/falha).",
+            "Menciona bugs conhecidos ou bloqueadores.",
           ],
         };
       }
       break;
     }
     case "tests": {
-      const mentionsCriteria = /(acceptance criteria|given|when|then|as a\b|i want\b)/i.test(input);
+      const mentionsCriteria = /(crit[ée]rio|aceita[çc][ãa]o|dado|quando|ent[ãa]o|given|when|then|como\b|quero\b|as a\b|i want\b)/i.test(input);
       if (!mentionsCriteria) {
         return {
           ok: false,
-          title: "A user story with acceptance criteria is required.",
+          title: "É necessária uma user story com critérios de aceitação.",
           hints: [
-            'Include the story in "As a … I want … so that …" format.',
-            'Provide at least one acceptance criterion in Given / When / Then form.',
+            'Inclui a story no formato "Como … quero … para que …".',
+            "Fornece pelo menos um critério em Dado / Quando / Então.",
           ],
         };
       }
@@ -127,22 +128,21 @@ export function validateInput(feature: FeatureId, raw: string): ValidationResult
       if (lineCount(input) < 3) {
         return {
           ok: false,
-          title: "Meeting notes look too sparse.",
+          title: "As notas da reunião parecem demasiado escassas.",
           hints: [
-            "Paste the raw notes — attendees, discussion points, decisions and commitments.",
-            "More context yields a more accurate summary.",
+            "Cola as notas brutas — participantes, pontos discutidos, decisões e compromissos.",
+            "Mais contexto produz um resumo mais fiel.",
           ],
         };
       }
       break;
     }
     case "user-story": {
-      // Vague single-word / placeholder inputs
-      const looksVague = /^(test|todo|asap|something|stuff|thing|feature x?)\b/i.test(input);
+      const looksVague = /^(teste|todo|asap|algo|coisa|qualquer\s+coisa|feature\s*x?)\b/i.test(input);
       if (looksVague) {
         return {
           ok: false,
-          title: "This description is too vague.",
+          title: "A descrição é demasiado vaga.",
           hints: featureHints("user-story"),
         };
       }
@@ -157,36 +157,36 @@ function featureHints(feature: FeatureId): string[] {
   switch (feature) {
     case "user-story":
       return [
-        "Who is the user? (persona / role)",
-        "What action or capability do they need?",
-        "What benefit or outcome does it deliver?",
+        "Quem é o utilizador? (persona / papel)",
+        "Que ação ou capacidade precisa?",
+        "Que benefício ou resultado isso traz?",
       ];
     case "backlog":
       return [
-        "Paste at least 2 backlog items, one per line.",
-        "Use short, clear titles — e.g. 'Add SSO login', 'Fix cart total bug'.",
+        "Cola pelo menos 2 itens, um por linha.",
+        "Usa títulos curtos e claros — ex.: 'Adicionar SSO', 'Corrigir total do carrinho'.",
       ];
     case "meeting":
       return [
-        "Paste the raw meeting notes (attendees, topics, decisions, action items).",
-        "Aim for at least a few sentences of context.",
+        "Cola as notas da reunião (participantes, tópicos, decisões, ações).",
+        "Inclui pelo menos algumas frases de contexto.",
       ];
     case "sprint":
       return [
-        "Include team capacity in story points (e.g. 'Capacity: 40 SP').",
-        "List candidate backlog items with estimates.",
-        "Mention constraints, dependencies or absences.",
+        "Indica a capacidade da equipa em story points (ex.: 'Capacidade: 40 SP').",
+        "Lista os itens candidatos com as estimativas.",
+        "Menciona restrições, dependências ou ausências.",
       ];
     case "release":
       return [
-        "List the features included in the release.",
-        "Describe test status and coverage.",
-        "Mention known bugs, blockers or compliance requirements.",
+        "Lista as funcionalidades incluídas na release.",
+        "Descreve o estado dos testes e a cobertura.",
+        "Menciona bugs conhecidos, bloqueadores ou requisitos de conformidade.",
       ];
     case "tests":
       return [
-        "Provide a user story in 'As a … I want … so that …' form.",
-        "Include at least one Given / When / Then acceptance criterion.",
+        "Fornece a user story no formato 'Como … quero … para que …'.",
+        "Inclui pelo menos um critério em Dado / Quando / Então.",
       ];
   }
 }
