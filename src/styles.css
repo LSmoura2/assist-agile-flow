@@ -62,26 +62,29 @@
 }
 
 :root {
-  --radius: 0.625rem;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.129 0.042 264.695);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.129 0.042 264.695);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.129 0.042 264.695);
-  --primary: oklch(0.208 0.042 265.755);
-  --primary-foreground: oklch(0.984 0.003 247.858);
-  --secondary: oklch(0.968 0.007 247.896);
-  --secondary-foreground: oklch(0.208 0.042 265.755);
-  --muted: oklch(0.968 0.007 247.896);
-  --muted-foreground: oklch(0.554 0.046 257.417);
-  --accent: oklch(0.968 0.007 247.896);
-  --accent-foreground: oklch(0.208 0.042 265.755);
-  --destructive: oklch(0.577 0.245 27.325);
-  --destructive-foreground: oklch(0.984 0.003 247.858);
-  --border: oklch(0.929 0.013 255.508);
-  --input: oklch(0.929 0.013 255.508);
-  --ring: oklch(0.704 0.04 256.788);
+  --radius: 0.75rem;
+  /* Deep navy background #0D1B2A */
+  --background: oklch(0.21 0.035 250);
+  --foreground: oklch(0.97 0.008 240);
+  /* Slightly lifted surface */
+  --card: oklch(0.255 0.035 250);
+  --card-foreground: oklch(0.97 0.008 240);
+  --popover: oklch(0.255 0.035 250);
+  --popover-foreground: oklch(0.97 0.008 240);
+  /* Teal accent #0891B2 */
+  --primary: oklch(0.64 0.12 215);
+  --primary-foreground: oklch(0.15 0.03 250);
+  --secondary: oklch(0.3 0.03 250);
+  --secondary-foreground: oklch(0.97 0.008 240);
+  --muted: oklch(0.28 0.03 250);
+  --muted-foreground: oklch(0.72 0.02 240);
+  --accent: oklch(0.64 0.12 215);
+  --accent-foreground: oklch(0.15 0.03 250);
+  --destructive: oklch(0.62 0.22 25);
+  --destructive-foreground: oklch(0.98 0.005 240);
+  --border: oklch(0.35 0.03 250);
+  --input: oklch(0.32 0.03 250);
+  --ring: oklch(0.64 0.12 215);
   --chart-1: oklch(0.646 0.222 41.116);
   --chart-2: oklch(0.6 0.118 184.704);
   --chart-3: oklch(0.398 0.07 227.392);
@@ -141,4 +144,73 @@
     background-color: var(--color-background);
     color: var(--color-foreground);
   }
+}
+
+@layer components {
+  .markdown-output {
+    color: var(--color-foreground);
+    font-size: 0.9rem;
+    line-height: 1.65;
+  }
+  .markdown-output h1,
+  .markdown-output h2,
+  .markdown-output h3,
+  .markdown-output h4 {
+    font-weight: 600;
+    color: var(--color-foreground);
+    margin: 1.4em 0 0.6em;
+    line-height: 1.3;
+  }
+  .markdown-output h1 { font-size: 1.4rem; }
+  .markdown-output h2 { font-size: 1.15rem; color: var(--color-primary); }
+  .markdown-output h3 { font-size: 1rem; }
+  .markdown-output h2:first-child,
+  .markdown-output h1:first-child { margin-top: 0; }
+  .markdown-output p { margin: 0.7em 0; }
+  .markdown-output strong { color: var(--color-foreground); font-weight: 600; }
+  .markdown-output ul,
+  .markdown-output ol { margin: 0.7em 0; padding-left: 1.4em; }
+  .markdown-output ul { list-style: disc; }
+  .markdown-output ol { list-style: decimal; }
+  .markdown-output li { margin: 0.25em 0; }
+  .markdown-output li > p { margin: 0.25em 0; }
+  .markdown-output hr {
+    border: 0;
+    border-top: 1px solid var(--color-border);
+    margin: 1.4em 0;
+  }
+  .markdown-output code {
+    background: color-mix(in oklab, var(--color-muted) 60%, transparent);
+    padding: 0.1em 0.35em;
+    border-radius: 4px;
+    font-size: 0.85em;
+  }
+  .markdown-output pre {
+    background: color-mix(in oklab, var(--color-muted) 70%, transparent);
+    border: 1px solid var(--color-border);
+    padding: 0.9em 1em;
+    border-radius: 8px;
+    overflow-x: auto;
+    margin: 0.9em 0;
+  }
+  .markdown-output pre code { background: transparent; padding: 0; }
+  .markdown-output blockquote {
+    border-left: 3px solid var(--color-primary);
+    padding-left: 0.9em;
+    margin: 0.9em 0;
+    color: var(--color-muted-foreground);
+  }
+  .markdown-output table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 0.9em 0;
+    font-size: 0.85em;
+  }
+  .markdown-output th,
+  .markdown-output td {
+    border: 1px solid var(--color-border);
+    padding: 0.5em 0.7em;
+    text-align: left;
+  }
+  .markdown-output th { background: var(--color-muted); font-weight: 600; }
 }
