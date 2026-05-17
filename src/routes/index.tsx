@@ -19,6 +19,7 @@ import {
   PLACEHOLDERS,
   type FeatureId,
 } from "@/lib/prompts";
+import { validateInput } from "@/lib/validate-input";
 
 export const Route = createFileRoute("/")({
   component: AgileAIPage,
@@ -39,6 +40,7 @@ function AgileAIPage() {
   const [output, setOutput] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [validation, setValidation] = useState<{ title: string; hints: string[] } | null>(null);
   const [copied, setCopied] = useState(false);
 
   const activeFeature = useMemo(
@@ -53,7 +55,14 @@ function AgileAIPage() {
   );
 
   async function handleGenerate() {
-    if (!input.trim() || loading) return;
+    if (loading) return;
+    const check = validateInput(feature, input);
+    if (!check.ok) {
+      setValidation({ title: check.title, hints: check.hints });
+      setError(null);
+      return;
+    }
+    setValidation(null);
     setLoading(true);
     setError(null);
     setOutput("");
