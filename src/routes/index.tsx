@@ -74,12 +74,12 @@ function AgileAIPage() {
       });
       const data = (await res.json()) as { output?: string; error?: string };
       if (!res.ok) {
-        setError(data.error ?? "Something went wrong.");
+        setError(data.error ?? "Ocorreu um erro inesperado.");
       } else {
         setOutput(data.output ?? "");
       }
     } catch {
-      setError("Network error. Please try again.");
+      setError("Erro de rede. Tenta novamente.");
     } finally {
       setLoading(false);
     }
@@ -176,7 +176,7 @@ function AgileAIPage() {
             </div>
 
             <label htmlFor="ai-input" className="sr-only">
-              Input
+              Descrição
             </label>
             <textarea
               id="ai-input"
