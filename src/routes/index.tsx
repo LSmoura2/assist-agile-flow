@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -99,16 +99,24 @@ function AgileAIPage() {
   return (
     <div className="min-h-screen bg-background text-foreground">
       <header className="border-b border-border/60 bg-card/40 backdrop-blur">
-        <div className="mx-auto flex max-w-6xl items-center gap-3 px-4 py-5 sm:px-6">
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/15 text-primary">
-            <Sparkles className="h-5 w-5" />
+        <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-5 sm:px-6">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/15 text-primary">
+              <Sparkles className="h-5 w-5" />
+            </div>
+            <div>
+              <h1 className="text-xl font-semibold tracking-tight">AgileAI Assistant</h1>
+              <p className="text-xs text-muted-foreground">
+                Copiloto de IA para equipas Agile &amp; DevOps
+              </p>
+            </div>
           </div>
-          <div>
-            <h1 className="text-xl font-semibold tracking-tight">AgileAI Assistant</h1>
-            <p className="text-xs text-muted-foreground">
-              Copiloto de IA para equipas Agile &amp; DevOps
-            </p>
-          </div>
+          <Link
+            to="/importar"
+            className="inline-flex items-center gap-1.5 rounded-md border border-border bg-background/50 px-3 py-1.5 text-xs font-medium hover:bg-background"
+          >
+            Importar Excel
+          </Link>
         </div>
       </header>
 
