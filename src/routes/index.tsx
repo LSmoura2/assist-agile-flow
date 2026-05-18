@@ -38,6 +38,57 @@ const ICONS: Record<FeatureId, typeof BookOpen> = {
   pipeline: GitBranch,
 };
 
+const EXAMPLES: Partial<Record<FeatureId, { input: string; output: string }>> = {
+  incident: {
+    input:
+      "Ontem por volta das 22h o checkout começou a devolver erro 500 para cerca de 30% dos utilizadores europeus. O problema durou 45 minutos e impediu a finalização de encomendas. Após análise dos logs, descobrimos que uma migração recente à base de dados deixou um índice em falta na tabela orders, o que provocou timeouts no serviço de pagamentos. A solução foi recriar o índice e adicionar alerta de latência.",
+    output: `## Severidade
+Alta
+
+## Problema
+O serviço de checkout devolveu erros HTTP 500 a aproximadamente 30% dos utilizadores europeus durante 45 minutos.
+
+## Impacto
+Cerca de um terço das tentativas de compra na região EU falharam, com perda direta de receita e degradação da confiança no produto.
+
+## Causa Raiz
+Uma migração recente à base de dados removeu inadvertidamente um índice na tabela \`orders\`, causando timeouts nas chamadas ao serviço de pagamentos.
+
+## Solução
+- Recriação imediata do índice em falta na tabela \`orders\`.
+- Adição de alerta de latência no serviço de pagamentos.
+- Revisão do processo de migrações para incluir verificação de índices críticos.`,
+  },
+  pipeline: {
+    input:
+      "O nosso pipeline de CI/CD no GitHub Actions demora cerca de 35 minutos por build. Não temos cache de dependências npm, os testes correm em série, e o deploy para produção é feito manualmente via SSH. Não existe rollback automático nem ambiente de staging. Os testes E2E falham frequentemente de forma intermitente.",
+    output: `## Gargalos Identificados
+- Build total de ~35 minutos sem cache de dependências npm.
+- Testes a correr em série em vez de paralelizados.
+- Deploy manual via SSH, lento e sujeito a erro humano.
+- Testes E2E instáveis (flaky) bloqueiam merges.
+
+## Práticas Desaconselhadas
+- Deploy direto para produção sem ambiente de staging.
+- Ausência de rollback automático em caso de falha.
+- Falta de isolamento entre execuções de testes E2E.
+
+## Sugestões de Melhoria
+- Adicionar \`actions/cache\` para \`node_modules\` e artefactos de build (redução estimada de 40–60% no tempo).
+- Paralelizar suites de testes com matrix builds no GitHub Actions.
+- Introduzir ambiente de staging com promoção automática staging → produção.
+- Implementar deploy automatizado com estratégia blue-green ou canary e rollback automático em falhas de healthcheck.
+- Estabilizar testes E2E com retries direcionados e isolamento de dados por execução.
+
+## Ferramentas Recomendadas
+- **GitHub Actions** (cache, matrix, environments)
+- **Docker** + **Docker Compose** para ambientes reprodutíveis
+- **Argo CD** ou **Flux** para GitOps em Kubernetes
+- **Playwright** com \`trace\` e \`retries\` para E2E fiáveis
+- **Datadog** ou **Grafana** para observabilidade de pipeline e produção`,
+  },
+};
+
 function AgileAIPage() {
   const [feature, setFeature] = useState<FeatureId>("user-story");
   const [input, setInput] = useState("");
@@ -206,24 +257,51 @@ function AgileAIPage() {
               <p className="text-xs text-muted-foreground">
                 {charCount.toLocaleString("pt-PT")} caracteres · {wordCount.toLocaleString("pt-PT")} palavras
               </p>
-              <button
-                type="button"
-                onClick={handleGenerate}
-                disabled={loading}
-                className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                {loading ? (
+              <div className="flex flex-wrap items-center gap-2">
+                {EXAMPLES[feature] && (
                   <>
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    A gerar…
-                  </>
-                ) : (
-                  <>
-                    <Sparkles className="h-4 w-4" />
-                    Gerar
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setInput(EXAMPLES[feature]!.input);
+                        setValidation(null);
+                        setError(null);
+                      }}
+                      className="inline-flex items-center gap-1.5 rounded-md border border-border bg-background/50 px-2.5 py-1.5 text-xs font-medium hover:bg-background"
+                    >
+                      Exemplo de input
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setOutput(EXAMPLES[feature]!.output);
+                        setError(null);
+                      }}
+                      className="inline-flex items-center gap-1.5 rounded-md border border-border bg-background/50 px-2.5 py-1.5 text-xs font-medium hover:bg-background"
+                    >
+                      Exemplo de output
+                    </button>
                   </>
                 )}
-              </button>
+                <button
+                  type="button"
+                  onClick={handleGenerate}
+                  disabled={loading}
+                  className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {loading ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      A gerar…
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="h-4 w-4" />
+                      Gerar
+                    </>
+                  )}
+                </button>
+              </div>
             </div>
 
             {validation && (
