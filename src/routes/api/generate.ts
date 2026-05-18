@@ -1,6 +1,8 @@
 import "@tanstack/react-start";
 import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
+import { generateText } from "ai";
+import { createLovableAiGatewayProvider } from "@/lib/ai-gateway";
 import { FEATURE_IDS, SYSTEM_PROMPTS, type FeatureId } from "@/lib/prompts";
 
 const RequestSchema = z.object({
@@ -8,41 +10,7 @@ const RequestSchema = z.object({
   input: z.string().trim().min(1, "Input is required").max(20000, "Input is too long"),
 });
 
-const PRIMARY_MODEL = "claude-sonnet-4-20250514";
-const FALLBACK_MODEL = "claude-3-5-sonnet-20241022";
-
-type AnthropicResponse = {
-  content?: Array<{ type: string; text?: string }>;
-  error?: { type?: string; message?: string };
-};
-
-async function callAnthropic(opts: {
-  apiKey: string;
-  model: string;
-  system: string;
-  userInput: string;
-}): Promise<{ ok: true; text: string } | { ok: false; status: number; body: AnthropicResponse }> {
-  const res = await fetch("https://api.anthropic.com/v1/messages", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "x-api-key": opts.apiKey,
-      "anthropic-version": "2023-06-01",
-    },
-    body: JSON.stringify({
-      model: opts.model,
-      max_tokens: 1500,
-      temperature: 0,
-      system: opts.system,
-      messages: [{ role: "user", content: opts.userInput }],
-    }),
-  });
-
-  const body = (await res.json().catch(() => ({}))) as AnthropicResponse;
-  if (!res.ok) return { ok: false, status: res.status, body };
-  const text = body.content?.find((c) => c.type === "text")?.text ?? "";
-  return { ok: true, text };
-}
+const MODEL = "google/gemini-3-flash-preview";
 
 function validateOutput(
   feature: FeatureId,
@@ -77,7 +45,6 @@ function validateOutput(
     if (missing.length > 0) {
       return { ok: false, reason: `Faltam secções: ${missing.join(", ")}` };
     }
-    // Count bullets in the "Sugestões de Melhoria" section
     const sugIdx = text.indexOf("## Sugestões de Melhoria");
     const nextIdx = text.indexOf("## Ferramentas Recomendadas", sugIdx);
     const section = text.slice(sugIdx, nextIdx > -1 ? nextIdx : undefined);
@@ -93,18 +60,33 @@ function validateOutput(
   return { ok: true };
 }
 
+async function callModel(opts: { system: string; userInput: string }): Promise<
+  { ok: true; text: string } | { ok: false; status: number; message: string }
+> {
+  const key = process.env.LOVABLE_API_KEY;
+  if (!key) {
+    return { ok: false, status: 500, message: "LOVABLE_API_KEY não configurada." };
+  }
+  try {
+    const gateway = createLovableAiGatewayProvider(key);
+    const { text } = await generateText({
+      model: gateway(MODEL),
+      system: opts.system,
+      prompt: opts.userInput,
+      temperature: 0,
+    });
+    return { ok: true, text };
+  } catch (err) {
+    const e = err as { statusCode?: number; status?: number; message?: string };
+    const status = e.statusCode ?? e.status ?? 500;
+    return { ok: false, status, message: e.message ?? "Erro desconhecido" };
+  }
+}
+
 export const Route = createFileRoute("/api/generate")({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        const apiKey = process.env.ANTHROPIC_API_KEY;
-        if (!apiKey) {
-          return Response.json(
-            { error: "O servidor não tem ANTHROPIC_API_KEY configurada." },
-            { status: 500 },
-          );
-        }
-
         let payload: unknown;
         try {
           payload = await request.json();
@@ -124,52 +106,30 @@ export const Route = createFileRoute("/api/generate")({
         const system = SYSTEM_PROMPTS[feature];
 
         try {
-          let result = await callAnthropic({
-            apiKey,
-            model: PRIMARY_MODEL,
-            system,
-            userInput: input,
-          });
-
-          // Fallback if the primary model is rejected (not_found / invalid model)
-          if (!result.ok && (result.status === 404 || result.status === 400)) {
-            const msg = result.body.error?.message?.toLowerCase() ?? "";
-            if (msg.includes("model")) {
-              result = await callAnthropic({
-                apiKey,
-                model: FALLBACK_MODEL,
-                system,
-                userInput: input,
-              });
-            }
-          }
+          let result = await callModel({ system, userInput: input });
 
           if (!result.ok) {
-            const upstreamMsg = result.body.error?.message;
-            if (result.status === 401) {
-              return Response.json(
-                { error: "Chave da API Anthropic inválida." },
-                { status: 500 },
-              );
-            }
             if (result.status === 429) {
               return Response.json(
                 { error: "Limite de pedidos atingido. Tenta novamente daqui a pouco." },
                 { status: 429 },
               );
             }
+            if (result.status === 402) {
+              return Response.json(
+                { error: "Créditos de IA esgotados. Adiciona créditos em Settings → Workspace → Usage." },
+                { status: 402 },
+              );
+            }
             return Response.json(
-              { error: upstreamMsg ?? "O serviço de IA devolveu um erro." },
+              { error: result.message || "O serviço de IA devolveu um erro." },
               { status: 502 },
             );
           }
 
-          // Output structure validation (for incident/pipeline) with one retry
           const check = validateOutput(feature, result.text);
           if (!check.ok) {
-            const retry = await callAnthropic({
-              apiKey,
-              model: PRIMARY_MODEL,
+            const retry = await callModel({
               system:
                 system +
                 `\n\nIMPORTANTE: A resposta anterior falhou a validação: ${check.reason}. Devolve estritamente a estrutura pedida.`,
