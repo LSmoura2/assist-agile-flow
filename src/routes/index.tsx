@@ -437,45 +437,90 @@ function AgileAIPage() {
             </div>
           </section>
 
-          {/* Output card */}
-          <section className="mt-6 rounded-2xl border border-border bg-card shadow-sm">
-            <div className="flex items-center justify-between border-b border-border px-5 py-3">
-              <h2 className="text-sm font-semibold">Resultado</h2>
-              <button
-                type="button"
-                onClick={handleCopy}
-                disabled={!output}
-                className="inline-flex items-center gap-1.5 rounded-md border border-border bg-background px-2.5 py-1.5 text-xs font-medium transition-colors hover:bg-secondary disabled:cursor-not-allowed disabled:opacity-40"
-              >
-                {copied ? (
-                  <>
-                    <Check className="h-3.5 w-3.5 text-primary" />
-                    Copiado
-                  </>
+          {/* Output card — destacado */}
+          <section
+            className="relative mt-8 overflow-hidden rounded-2xl p-[1.5px] shadow-lg"
+            style={{ background: "var(--gradient-ai)" }}
+          >
+            <div className="rounded-[calc(1rem-1px)] bg-card">
+              <div className="flex items-center justify-between border-b border-border px-5 py-3.5">
+                <div className="flex items-center gap-2">
+                  <div
+                    className="flex h-7 w-7 items-center justify-center rounded-lg text-white"
+                    style={{ background: "var(--gradient-ai)" }}
+                  >
+                    <Sparkles className="h-3.5 w-3.5" />
+                  </div>
+                  <h2 className="text-sm font-semibold">Resultado da IA</h2>
+                  {loading && (
+                    <span
+                      className="ml-2 inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-white"
+                      style={{ background: "var(--gradient-ai)" }}
+                    >
+                      <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-white" />
+                      A gerar
+                    </span>
+                  )}
+                </div>
+                <button
+                  type="button"
+                  onClick={handleCopy}
+                  disabled={!output}
+                  className="inline-flex items-center gap-1.5 rounded-md border border-border bg-background px-2.5 py-1.5 text-xs font-medium transition-colors hover:bg-secondary disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  {copied ? (
+                    <>
+                      <Check className="h-3.5 w-3.5 text-primary" />
+                      Copiado
+                    </>
+                  ) : (
+                    <>
+                      <ClipboardCopy className="h-3.5 w-3.5" />
+                      Copiar
+                    </>
+                  )}
+                </button>
+              </div>
+
+              <div className="px-6 py-6">
+                {loading && !output ? (
+                  <div className="space-y-3" aria-live="polite" aria-busy="true">
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                      A IA está a pensar…
+                    </div>
+                    <div className="space-y-2.5 pt-2">
+                      <div className="h-3 w-1/3 animate-pulse rounded bg-muted" />
+                      <div className="h-3 w-11/12 animate-pulse rounded bg-muted" />
+                      <div className="h-3 w-10/12 animate-pulse rounded bg-muted" />
+                      <div className="h-3 w-2/3 animate-pulse rounded bg-muted" />
+                      <div className="mt-4 h-3 w-1/4 animate-pulse rounded bg-muted" />
+                      <div className="h-3 w-full animate-pulse rounded bg-muted" />
+                      <div className="h-3 w-9/12 animate-pulse rounded bg-muted" />
+                    </div>
+                  </div>
+                ) : output ? (
+                  <article className="markdown-output">
+                    <ReactMarkdown remarkPlugins={[remarkGfm]}>{output}</ReactMarkdown>
+                  </article>
                 ) : (
-                  <>
-                    <ClipboardCopy className="h-3.5 w-3.5" />
-                    Copiar
-                  </>
+                  <div className="flex flex-col items-center justify-center gap-2 py-10 text-center">
+                    <div
+                      className="flex h-12 w-12 items-center justify-center rounded-2xl text-white opacity-90"
+                      style={{ background: "var(--gradient-ai)" }}
+                    >
+                      <Sparkles className="h-5 w-5" />
+                    </div>
+                    <p className="text-sm font-medium text-foreground">
+                      Pronto para gerar
+                    </p>
+                    <p className="max-w-md text-xs text-muted-foreground">
+                      O resultado gerado pela IA vai aparecer aqui. Escolhe uma funcionalidade,
+                      cola o teu contexto e carrega em Gerar.
+                    </p>
+                  </div>
                 )}
-              </button>
-            </div>
-            <div className="px-5 py-5">
-              {loading && !output ? (
-                <p className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  A pensar…
-                </p>
-              ) : output ? (
-                <article className="markdown-output">
-                  <ReactMarkdown remarkPlugins={[remarkGfm]}>{output}</ReactMarkdown>
-                </article>
-              ) : (
-                <p className="text-sm text-muted-foreground">
-                  O resultado gerado pela IA vai aparecer aqui. Escolhe uma funcionalidade,
-                  cola o teu contexto e carrega em Gerar.
-                </p>
-              )}
+              </div>
             </div>
           </section>
         </main>
