@@ -220,5 +220,17 @@ function featureHints(feature: FeatureId): string[] {
         "Fornece a user story no formato 'Como … quero … para que …'.",
         "Inclui pelo menos um critério em Dado / Quando / Então.",
       ];
+    case "incident":
+      return [
+        "Descreve o sistema/serviço afetado e quando começou.",
+        "Indica o impacto observado (utilizadores, duração, erros).",
+        "Acrescenta sintomas, mensagens de erro e o que já foi feito.",
+      ];
+    case "pipeline":
+      return [
+        "Descreve as etapas do pipeline (build, test, deploy).",
+        "Indica ferramentas usadas (GitHub Actions, Jenkins, etc.).",
+        "Menciona tempos médios e problemas/falhas conhecidos.",
+      ];
   }
 }
