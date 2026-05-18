@@ -152,6 +152,34 @@ export function validateInput(feature: FeatureId, raw: string): ValidationResult
       }
       break;
     }
+    case "incident": {
+      const mentionsImpact =
+        /\b(impacto|afetad|afect|utilizadores?|clientes?|sistema|serviço|servico|produção|producao|downtime|indisponível|indisponivel|erro|falha|bug)\b/i.test(
+          input,
+        );
+      if (!mentionsImpact) {
+        return {
+          ok: false,
+          title: "Falta indicar o impacto ou sistema afetado.",
+          hints: featureHints("incident"),
+        };
+      }
+      break;
+    }
+    case "pipeline": {
+      const mentionsPipeline =
+        /\b(build|test|testes|deploy|ci|cd|pipeline|integração|integracao|entrega|jenkins|github\s*actions|gitlab|argo|docker|kubernetes|k8s)\b/i.test(
+          input,
+        );
+      if (!mentionsPipeline) {
+        return {
+          ok: false,
+          title: "Falta contexto do pipeline (build/test/deploy).",
+          hints: featureHints("pipeline"),
+        };
+      }
+      break;
+    }
   }
 
   return { ok: true };
