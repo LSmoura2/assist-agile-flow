@@ -164,6 +164,32 @@ export const Route = createFileRoute("/api/generate")({
             );
           }
 
+          // Output structure validation (for incident/pipeline) with one retry
+          const check = validateOutput(feature, result.text);
+          if (!check.ok) {
+            const retry = await callAnthropic({
+              apiKey,
+              model: PRIMARY_MODEL,
+              system:
+                system +
+                `\n\nIMPORTANTE: A resposta anterior falhou a validação: ${check.reason}. Devolve estritamente a estrutura pedida.`,
+              userInput: input,
+            });
+            if (retry.ok) {
+              const recheck = validateOutput(feature, retry.text);
+              if (recheck.ok) {
+                return Response.json({ output: retry.text, feature });
+              }
+            }
+            return Response.json(
+              {
+                error:
+                  "Resposta não respeitou o formato esperado. Tenta novamente ou ajusta o input.",
+              },
+              { status: 502 },
+            );
+          }
+
           return Response.json({ output: result.text, feature });
         } catch (err) {
           console.error("generate error", err);
