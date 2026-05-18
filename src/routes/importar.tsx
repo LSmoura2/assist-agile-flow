@@ -1,10 +1,16 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
+  ArrowDown,
   ArrowLeft,
+  ArrowUp,
   Download,
   FileSpreadsheet,
+  Filter,
   Loader2,
+  Minus,
+  Search,
+  Sparkles,
   Upload,
   XCircle,
 } from "lucide-react";
@@ -18,11 +24,96 @@ export const Route = createFileRoute("/importar")({
   component: ImportPage,
 });
 
+type PriorityKey = "high" | "medium" | "low";
+
+function normalizePriority(p: string): PriorityKey {
+  const v = p.trim().toLowerCase();
+  if (["highest", "high", "alta", "crítica", "critica", "critical"].includes(v))
+    return "high";
+  if (["low", "lowest", "baixa", "minor", "trivial"].includes(v)) return "low";
+  return "medium";
+}
+
+function aiScoreFor(issue: BacklogIssue, prio: PriorityKey): number {
+  // Pontuação determinística: prioridade pesa mais, story points e contexto somam.
+  let score = prio === "high" ? 82 : prio === "medium" ? 70 : 58;
+  if (issue.storyPoints != null) {
+    if (issue.storyPoints <= 3) score += 6;
+    else if (issue.storyPoints <= 8) score += 10;
+    else score += 4;
+  }
+  if (issue.acceptanceCriteria && issue.acceptanceCriteria.length > 20) score += 6;
+  if (issue.description && issue.description.length > 40) score += 4;
+  return Math.min(99, Math.max(35, score));
+}
+
+function labelsFor(issue: BacklogIssue): string[] {
+  const out: string[] = [];
+  const t = issue.issueType?.toLowerCase() ?? "";
+  if (t.includes("bug")) out.push("bug");
+  else if (t.includes("task")) out.push("task");
+  else if (t.includes("story")) out.push("feature");
+  else if (t) out.push(t);
+  const epic = issue.epicLink?.toLowerCase() ?? "";
+  if (epic.includes("front")) out.push("frontend");
+  else if (epic.includes("back") || epic.includes("api")) out.push("backend");
+  else if (epic.includes("design") || epic.includes("ui")) out.push("design");
+  else if (epic.includes("devops") || epic.includes("ci")) out.push("devops");
+  else if (epic.includes("test") || epic.includes("qa")) out.push("qa");
+  return out.slice(0, 2);
+}
+
+function PriorityCell({ p }: { p: PriorityKey }) {
+  if (p === "high")
+    return (
+      <span className="inline-flex items-center gap-1.5 text-sm text-rose-600 dark:text-rose-400">
+        <ArrowUp className="h-3.5 w-3.5" /> Alta
+      </span>
+    );
+  if (p === "low")
+    return (
+      <span className="inline-flex items-center gap-1.5 text-sm text-sky-600 dark:text-sky-400">
+        <ArrowDown className="h-3.5 w-3.5" /> Baixa
+      </span>
+    );
+  return (
+    <span className="inline-flex items-center gap-1.5 text-sm text-muted-foreground">
+      <Minus className="h-3.5 w-3.5" /> Média
+    </span>
+  );
+}
+
+function ScoreBadge({ score }: { score: number }) {
+  const tone =
+    score >= 85
+      ? "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-300 dark:border-emerald-500/20"
+      : score >= 70
+        ? "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-500/10 dark:text-amber-300 dark:border-amber-500/20"
+        : "bg-slate-50 text-slate-700 border-slate-200 dark:bg-slate-500/10 dark:text-slate-300 dark:border-slate-500/20";
+  return (
+    <span
+      className={`inline-flex items-center rounded-md border px-2 py-0.5 text-xs font-semibold tabular-nums ${tone}`}
+    >
+      {score}/100
+    </span>
+  );
+}
+
+function LabelChip({ name }: { name: string }) {
+  return (
+    <span className="inline-flex items-center rounded-md bg-sky-50 px-2 py-0.5 text-xs font-medium text-sky-700 dark:bg-sky-500/10 dark:text-sky-300">
+      {name}
+    </span>
+  );
+}
+
 function ImportPage() {
   const [fileName, setFileName] = useState<string | null>(null);
   const [issues, setIssues] = useState<BacklogIssue[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [query, setQuery] = useState("");
+  const [aiSort, setAiSort] = useState(false);
 
   async function handleFile(file: File) {
     setLoading(true);
@@ -61,20 +152,58 @@ function ImportPage() {
     setError(null);
   }
 
+  const enriched = useMemo(
+    () =>
+      issues.map((i, idx) => {
+        const prio = normalizePriority(i.priority);
+        return {
+          issue: i,
+          id: `DEV-${(240 + idx).toString()}`,
+          prio,
+          score: aiScoreFor(i, prio),
+          labels: labelsFor(i),
+        };
+      }),
+    [issues],
+  );
+
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    const base = q
+      ? enriched.filter(
+          (e) =>
+            e.issue.summary.toLowerCase().includes(q) ||
+            e.id.toLowerCase().includes(q) ||
+            e.issue.description.toLowerCase().includes(q),
+        )
+      : enriched;
+    if (aiSort) {
+      return [...base].sort((a, b) => b.score - a.score);
+    }
+    return base;
+  }, [enriched, query, aiSort]);
+
+  const topPicks = useMemo(
+    () =>
+      [...enriched]
+        .sort((a, b) => b.score - a.score)
+        .slice(0, 2)
+        .map((e) => e.id),
+    [enriched],
+  );
+
   return (
     <div className="min-h-screen bg-background text-foreground">
       <header className="border-b border-border/60 bg-card/40 backdrop-blur">
-        <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-5 sm:px-6">
+        <div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-5 sm:px-6">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/15 text-primary">
               <FileSpreadsheet className="h-5 w-5" />
             </div>
             <div>
-              <h1 className="text-xl font-semibold tracking-tight">
-                Importar Backlog (Excel)
-              </h1>
+              <h1 className="text-xl font-semibold tracking-tight">Backlog</h1>
               <p className="text-xs text-muted-foreground">
-                Carrega um ficheiro .xlsx no formato de import do Jira
+                Importa um .xlsx (formato Jira) e prioriza com a IA
               </p>
             </div>
           </div>
@@ -88,25 +217,83 @@ function ImportPage() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-6xl space-y-6 px-4 py-6 sm:px-6 lg:py-10">
-        {/* Upload */}
-        <div className="rounded-xl border border-border bg-card/50 p-5">
+      <main className="mx-auto max-w-7xl space-y-6 px-4 py-6 sm:px-6 lg:py-8">
+        {/* Search + actions bar */}
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="relative min-w-0 flex-1">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <input
+              type="text"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Pesquisar itens do backlog…"
+              className="w-full rounded-xl border border-border bg-card py-2.5 pl-10 pr-3 text-sm shadow-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
+            />
+          </div>
+          <button
+            type="button"
+            className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-4 py-2.5 text-sm font-medium shadow-sm hover:bg-secondary"
+          >
+            <Filter className="h-4 w-4" />
+            Filtros
+          </button>
+          <button
+            type="button"
+            onClick={() => setAiSort((v) => !v)}
+            className="inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold text-white shadow-md transition-opacity hover:opacity-90"
+            style={{ background: "var(--gradient-ai)" }}
+          >
+            <Sparkles className="h-4 w-4" />
+            {aiSort ? "Ordem AI ✓" : "AI Sort"}
+          </button>
+        </div>
+
+        {/* Upload card (compact) */}
+        <div className="rounded-2xl border border-border bg-card p-4 shadow-sm">
           <label
             htmlFor="xlsx-input"
-            className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-border/80 bg-background/40 px-6 py-10 text-center transition-colors hover:border-primary/60 hover:bg-primary/5"
+            className="flex cursor-pointer items-center justify-between gap-4 rounded-xl border-2 border-dashed border-border/80 bg-background/40 px-5 py-4 text-left transition-colors hover:border-primary/60 hover:bg-primary/5"
           >
-            {loading ? (
-              <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            ) : (
-              <Upload className="h-8 w-8 text-primary" />
+            <div className="flex items-center gap-3">
+              {loading ? (
+                <Loader2 className="h-6 w-6 animate-spin text-primary" />
+              ) : (
+                <Upload className="h-6 w-6 text-primary" />
+              )}
+              <div>
+                <p className="text-sm font-medium">
+                  {fileName ?? "Carregar ficheiro .xlsx"}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  Summary, Issue Type, Priority, Story Points, Epic Link, Sprint…
+                </p>
+              </div>
+            </div>
+            {issues.length > 0 && (
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    handleDownload();
+                  }}
+                  className="inline-flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground hover:opacity-90"
+                >
+                  <Download className="h-3.5 w-3.5" />
+                  Exportar CSV
+                </button>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    reset();
+                  }}
+                  className="inline-flex items-center gap-1.5 rounded-md border border-border bg-background/50 px-2.5 py-1.5 text-xs font-medium hover:bg-background"
+                >
+                  Limpar
+                </button>
+              </div>
             )}
-            <span className="text-sm font-medium">
-              {fileName ?? "Clica para escolher um ficheiro .xlsx"}
-            </span>
-            <span className="text-xs text-muted-foreground">
-              Colunas esperadas: Summary, Issue Type, Priority, Story Points, Epic
-              Link, Sprint, Description, Acceptance Criteria
-            </span>
             <input
               id="xlsx-input"
               type="file"
@@ -121,72 +308,128 @@ function ImportPage() {
           </label>
 
           {error && (
-            <div className="mt-3 flex items-start gap-2 rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive-foreground">
+            <div className="mt-3 flex items-start gap-2 rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
               <XCircle className="mt-0.5 h-4 w-4 shrink-0" />
               <span>{error}</span>
             </div>
           )}
         </div>
 
-        {/* Preview */}
-        {issues.length > 0 && (
-          <div className="rounded-xl border border-border bg-card/50">
-            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border/70 px-5 py-3">
-              <div>
-                <h2 className="text-sm font-semibold">
-                  {issues.length.toLocaleString("pt-PT")} issues prontas a importar
-                </h2>
-                <p className="text-xs text-muted-foreground">
-                  Pré-visualização das primeiras linhas
+        {/* AI recommendation */}
+        {enriched.length > 0 && (
+          <div
+            className="rounded-2xl border p-4 shadow-sm"
+            style={{
+              background:
+                "linear-gradient(90deg, color-mix(in oklab, var(--ai-from) 12%, white), color-mix(in oklab, var(--ai-to) 8%, white))",
+              borderColor: "color-mix(in oklab, var(--ai-from) 25%, transparent)",
+            }}
+          >
+            <div className="flex items-start gap-3">
+              <div
+                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-white"
+                style={{ background: "var(--gradient-ai)" }}
+              >
+                <Sparkles className="h-4 w-4" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-sm font-semibold" style={{ color: "var(--ai-to)" }}>
+                  Recomendação da IA
+                </p>
+                <p className="mt-0.5 text-sm text-foreground/80">
+                  Com base na prioridade, story points e clareza dos critérios,
+                  considera priorizar{" "}
+                  {topPicks.length > 0 ? (
+                    <strong className="font-semibold">{topPicks.join(" e ")}</strong>
+                  ) : (
+                    "os itens com maior AI Score"
+                  )}{" "}
+                  para o próximo sprint.
                 </p>
               </div>
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={handleDownload}
-                  className="inline-flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground hover:opacity-90"
-                >
-                  <Download className="h-3.5 w-3.5" />
-                  Exportar CSV para Jira
-                </button>
-                <button
-                  type="button"
-                  onClick={reset}
-                  className="inline-flex items-center gap-1.5 rounded-md border border-border bg-background/50 px-2.5 py-1.5 text-xs font-medium hover:bg-background"
-                >
-                  Limpar
-                </button>
-              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Table */}
+        {enriched.length > 0 && (
+          <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
+            <div className="flex items-center justify-between border-b border-border px-5 py-3">
+              <h2 className="text-sm font-semibold">
+                {filtered.length.toLocaleString("pt-PT")} itens
+                <span className="ml-1 font-normal text-muted-foreground">
+                  · {issues.length.toLocaleString("pt-PT")} no total
+                </span>
+              </h2>
             </div>
 
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
-                <thead className="bg-background/40 text-left text-xs uppercase tracking-wider text-muted-foreground">
+                <thead className="bg-muted/40 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                   <tr>
-                    <th className="px-4 py-2 font-medium">#</th>
-                    <th className="px-4 py-2 font-medium">Summary</th>
-                    <th className="px-4 py-2 font-medium">Type</th>
-                    <th className="px-4 py-2 font-medium">Priority</th>
-                    <th className="px-4 py-2 font-medium">SP</th>
-                    <th className="px-4 py-2 font-medium">Epic</th>
-                    <th className="px-4 py-2 font-medium">Sprint</th>
+                    <th className="px-5 py-3">ID</th>
+                    <th className="px-5 py-3">Título</th>
+                    <th className="px-5 py-3">Prioridade</th>
+                    <th className="px-5 py-3 text-center">Pontos</th>
+                    <th className="px-5 py-3">AI Score</th>
+                    <th className="px-5 py-3">Labels</th>
+                    <th className="px-5 py-3">Responsável</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {issues.map((i, idx) => (
-                    <tr key={idx} className="border-t border-border/40 align-top">
-                      <td className="px-4 py-2 text-xs text-muted-foreground">
-                        {idx + 1}
+                  {filtered.map((e) => (
+                    <tr
+                      key={e.id}
+                      className="border-t border-border/60 align-top transition-colors hover:bg-muted/30"
+                    >
+                      <td className="px-5 py-4 align-middle text-sm font-medium text-muted-foreground">
+                        {e.id}
                       </td>
-                      <td className="px-4 py-2">{i.summary}</td>
-                      <td className="px-4 py-2 text-xs">{i.issueType}</td>
-                      <td className="px-4 py-2 text-xs">{i.priority}</td>
-                      <td className="px-4 py-2 text-xs">{i.storyPoints ?? "—"}</td>
-                      <td className="px-4 py-2 text-xs text-muted-foreground">
-                        {i.epicLink || "—"}
+                      <td className="px-5 py-4">
+                        <p className="font-semibold text-foreground">
+                          {e.issue.summary}
+                        </p>
+                        {e.issue.description && (
+                          <p className="mt-0.5 line-clamp-1 text-xs text-muted-foreground">
+                            {e.issue.description}
+                          </p>
+                        )}
+                        {topPicks.includes(e.id) && (
+                          <p
+                            className="mt-1.5 inline-flex items-center gap-1 text-xs"
+                            style={{ color: "var(--ai-to)" }}
+                          >
+                            <Sparkles className="h-3 w-3" />
+                            Alto valor de negócio · critérios claros
+                          </p>
+                        )}
                       </td>
-                      <td className="px-4 py-2 text-xs text-muted-foreground">
-                        {i.sprint || "—"}
+                      <td className="px-5 py-4 align-middle">
+                        <PriorityCell p={e.prio} />
+                      </td>
+                      <td className="px-5 py-4 text-center align-middle">
+                        <span className="inline-flex h-7 min-w-7 items-center justify-center rounded-md border border-border bg-background px-2 text-xs font-semibold tabular-nums">
+                          {e.issue.storyPoints ?? "—"}
+                        </span>
+                      </td>
+                      <td className="px-5 py-4 align-middle">
+                        <ScoreBadge score={e.score} />
+                      </td>
+                      <td className="px-5 py-4 align-middle">
+                        <div className="flex flex-wrap gap-1">
+                          {e.labels.length > 0 ? (
+                            e.labels.map((l) => <LabelChip key={l} name={l} />)
+                          ) : (
+                            <span className="text-xs text-muted-foreground">—</span>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-5 py-4 align-middle text-sm text-muted-foreground">
+                        {e.issue.sprint ? (
+                          <span className="text-foreground/80">{e.issue.sprint}</span>
+                        ) : (
+                          "Por atribuir"
+                        )}
                       </td>
                     </tr>
                   ))}
@@ -196,8 +439,8 @@ function ImportPage() {
 
             <div className="border-t border-border/60 px-5 py-3 text-xs text-muted-foreground">
               Para importar no Jira: <strong>Settings → System → External
-              system import → CSV</strong>, carrega o ficheiro exportado e
-              mapeia as colunas.
+              system import → CSV</strong>, carrega o ficheiro exportado e mapeia
+              as colunas.
             </div>
           </div>
         )}
