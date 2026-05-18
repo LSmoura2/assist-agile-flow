@@ -66,6 +66,10 @@ export const PLACEHOLDERS: Record<FeatureId, string> = {
     "Descreve o estado da release. Inclui: lista de funcionalidades, estado dos testes, bugs conhecidos e requisitos de conformidade.",
   tests:
     "Cola uma user story com os critérios de aceitação. A IA vai sugerir que tipos de testes escrever, com exemplos concretos.",
+  incident:
+    "Descreve o incidente: sistema afetado, data/hora, impacto observado, sintomas, mensagens de erro, e o que foi feito para resolver.",
+  pipeline:
+    "Descreve o pipeline atual (CI/CD): etapas (build/test/deploy), ferramentas usadas, tempos médios, e problemas conhecidos.",
 };
 
 export const SYSTEM_PROMPTS: Record<FeatureId, string> = {
