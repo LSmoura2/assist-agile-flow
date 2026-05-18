@@ -44,6 +44,55 @@ async function callAnthropic(opts: {
   return { ok: true, text };
 }
 
+function validateOutput(
+  feature: FeatureId,
+  text: string,
+): { ok: true } | { ok: false; reason: string } {
+  if (feature === "incident") {
+    const required = [
+      "## Severidade",
+      "## Problema",
+      "## Impacto",
+      "## Causa Raiz",
+      "## Solução",
+    ];
+    const missing = required.filter((h) => !text.includes(h));
+    if (missing.length > 0) {
+      return { ok: false, reason: `Faltam secções: ${missing.join(", ")}` };
+    }
+    const words = text.trim().split(/\s+/).length;
+    if (words > 180) {
+      return { ok: false, reason: `Resposta excede 150 palavras (tem ${words}).` };
+    }
+    return { ok: true };
+  }
+  if (feature === "pipeline") {
+    const required = [
+      "## Gargalos Identificados",
+      "## Práticas Desaconselhadas",
+      "## Sugestões de Melhoria",
+      "## Ferramentas Recomendadas",
+    ];
+    const missing = required.filter((h) => !text.includes(h));
+    if (missing.length > 0) {
+      return { ok: false, reason: `Faltam secções: ${missing.join(", ")}` };
+    }
+    // Count bullets in the "Sugestões de Melhoria" section
+    const sugIdx = text.indexOf("## Sugestões de Melhoria");
+    const nextIdx = text.indexOf("## Ferramentas Recomendadas", sugIdx);
+    const section = text.slice(sugIdx, nextIdx > -1 ? nextIdx : undefined);
+    const bullets = section.match(/^\s*[-*]\s+/gm) ?? [];
+    if (bullets.length < 3) {
+      return {
+        ok: false,
+        reason: `A secção "Sugestões de Melhoria" precisa de pelo menos 3 itens (tem ${bullets.length}).`,
+      };
+    }
+    return { ok: true };
+  }
+  return { ok: true };
+}
+
 export const Route = createFileRoute("/api/generate")({
   server: {
     handlers: {
@@ -111,6 +160,32 @@ export const Route = createFileRoute("/api/generate")({
             }
             return Response.json(
               { error: upstreamMsg ?? "O serviço de IA devolveu um erro." },
+              { status: 502 },
+            );
+          }
+
+          // Output structure validation (for incident/pipeline) with one retry
+          const check = validateOutput(feature, result.text);
+          if (!check.ok) {
+            const retry = await callAnthropic({
+              apiKey,
+              model: PRIMARY_MODEL,
+              system:
+                system +
+                `\n\nIMPORTANTE: A resposta anterior falhou a validação: ${check.reason}. Devolve estritamente a estrutura pedida.`,
+              userInput: input,
+            });
+            if (retry.ok) {
+              const recheck = validateOutput(feature, retry.text);
+              if (recheck.ok) {
+                return Response.json({ output: retry.text, feature });
+              }
+            }
+            return Response.json(
+              {
+                error:
+                  "Resposta não respeitou o formato esperado. Tenta novamente ou ajusta o input.",
+              },
               { status: 502 },
             );
           }

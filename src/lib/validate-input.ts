@@ -11,6 +11,8 @@ const MIN_CHARS: Record<FeatureId, number> = {
   sprint: 40,
   release: 40,
   tests: 30,
+  incident: 40,
+  pipeline: 30,
 };
 
 const MIN_WORDS: Record<FeatureId, number> = {
@@ -20,6 +22,8 @@ const MIN_WORDS: Record<FeatureId, number> = {
   sprint: 10,
   release: 10,
   tests: 8,
+  incident: 10,
+  pipeline: 8,
 };
 
 function wordCount(text: string): number {
@@ -148,6 +152,34 @@ export function validateInput(feature: FeatureId, raw: string): ValidationResult
       }
       break;
     }
+    case "incident": {
+      const mentionsImpact =
+        /\b(impacto|afetad|afect|utilizadores?|clientes?|sistema|serviço|servico|produção|producao|downtime|indisponível|indisponivel|erro|falha|bug)\b/i.test(
+          input,
+        );
+      if (!mentionsImpact) {
+        return {
+          ok: false,
+          title: "Falta indicar o impacto ou sistema afetado.",
+          hints: featureHints("incident"),
+        };
+      }
+      break;
+    }
+    case "pipeline": {
+      const mentionsPipeline =
+        /\b(build|test|testes|deploy|ci|cd|pipeline|integração|integracao|entrega|jenkins|github\s*actions|gitlab|argo|docker|kubernetes|k8s)\b/i.test(
+          input,
+        );
+      if (!mentionsPipeline) {
+        return {
+          ok: false,
+          title: "Falta contexto do pipeline (build/test/deploy).",
+          hints: featureHints("pipeline"),
+        };
+      }
+      break;
+    }
   }
 
   return { ok: true };
@@ -187,6 +219,18 @@ function featureHints(feature: FeatureId): string[] {
       return [
         "Fornece a user story no formato 'Como … quero … para que …'.",
         "Inclui pelo menos um critério em Dado / Quando / Então.",
+      ];
+    case "incident":
+      return [
+        "Descreve o sistema/serviço afetado e quando começou.",
+        "Indica o impacto observado (utilizadores, duração, erros).",
+        "Acrescenta sintomas, mensagens de erro e o que já foi feito.",
+      ];
+    case "pipeline":
+      return [
+        "Descreve as etapas do pipeline (build, test, deploy).",
+        "Indica ferramentas usadas (GitHub Actions, Jenkins, etc.).",
+        "Menciona tempos médios e problemas/falhas conhecidos.",
       ];
   }
 }
