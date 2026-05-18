@@ -11,6 +11,8 @@ const MIN_CHARS: Record<FeatureId, number> = {
   sprint: 40,
   release: 40,
   tests: 30,
+  incident: 40,
+  pipeline: 30,
 };
 
 const MIN_WORDS: Record<FeatureId, number> = {
@@ -20,6 +22,8 @@ const MIN_WORDS: Record<FeatureId, number> = {
   sprint: 10,
   release: 10,
   tests: 8,
+  incident: 10,
+  pipeline: 8,
 };
 
 function wordCount(text: string): number {
