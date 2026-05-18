@@ -35,6 +35,18 @@ export const FEATURES = [
     epic: "EP-6",
     short: "Testes por categoria com exemplos concretos",
   },
+  {
+    id: "incident",
+    name: "Sumário de Incidente",
+    epic: "EP-7",
+    short: "Problema, impacto, causa raiz e solução",
+  },
+  {
+    id: "pipeline",
+    name: "Melhorias ao Pipeline",
+    epic: "EP-8",
+    short: "Análise de gargalos e sugestões DevOps",
+  },
 ] as const;
 
 export type FeatureId = (typeof FEATURES)[number]["id"];
