@@ -234,16 +234,6 @@ function AgileAIPage() {
                   >
                     <Icon className="h-4 w-4 shrink-0" />
                     <span className="flex-1 truncate font-medium">{f.name}</span>
-                    <span
-                      className={[
-                        "rounded px-1.5 py-0.5 text-[10px] font-semibold",
-                        active
-                          ? "bg-white/20 text-primary-foreground"
-                          : "bg-sidebar-accent text-sidebar-foreground/60",
-                      ].join(" ")}
-                    >
-                      {f.epic}
-                    </span>
                   </button>
                 </li>
               );
