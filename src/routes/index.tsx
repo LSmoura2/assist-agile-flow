@@ -257,24 +257,51 @@ function AgileAIPage() {
               <p className="text-xs text-muted-foreground">
                 {charCount.toLocaleString("pt-PT")} caracteres · {wordCount.toLocaleString("pt-PT")} palavras
               </p>
-              <button
-                type="button"
-                onClick={handleGenerate}
-                disabled={loading}
-                className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                {loading ? (
+              <div className="flex flex-wrap items-center gap-2">
+                {EXAMPLES[feature] && (
                   <>
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    A gerar…
-                  </>
-                ) : (
-                  <>
-                    <Sparkles className="h-4 w-4" />
-                    Gerar
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setInput(EXAMPLES[feature]!.input);
+                        setValidation(null);
+                        setError(null);
+                      }}
+                      className="inline-flex items-center gap-1.5 rounded-md border border-border bg-background/50 px-2.5 py-1.5 text-xs font-medium hover:bg-background"
+                    >
+                      Exemplo de input
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setOutput(EXAMPLES[feature]!.output);
+                        setError(null);
+                      }}
+                      className="inline-flex items-center gap-1.5 rounded-md border border-border bg-background/50 px-2.5 py-1.5 text-xs font-medium hover:bg-background"
+                    >
+                      Exemplo de output
+                    </button>
                   </>
                 )}
-              </button>
+                <button
+                  type="button"
+                  onClick={handleGenerate}
+                  disabled={loading}
+                  className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {loading ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      A gerar…
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="h-4 w-4" />
+                      Gerar
+                    </>
+                  )}
+                </button>
+              </div>
             </div>
 
             {validation && (
