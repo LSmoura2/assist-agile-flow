@@ -44,6 +44,55 @@ async function callAnthropic(opts: {
   return { ok: true, text };
 }
 
+function validateOutput(
+  feature: FeatureId,
+  text: string,
+): { ok: true } | { ok: false; reason: string } {
+  if (feature === "incident") {
+    const required = [
+      "## Severidade",
+      "## Problema",
+      "## Impacto",
+      "## Causa Raiz",
+      "## Solução",
+    ];
+    const missing = required.filter((h) => !text.includes(h));
+    if (missing.length > 0) {
+      return { ok: false, reason: `Faltam secções: ${missing.join(", ")}` };
+    }
+    const words = text.trim().split(/\s+/).length;
+    if (words > 180) {
+      return { ok: false, reason: `Resposta excede 150 palavras (tem ${words}).` };
+    }
+    return { ok: true };
+  }
+  if (feature === "pipeline") {
+    const required = [
+      "## Gargalos Identificados",
+      "## Práticas Desaconselhadas",
+      "## Sugestões de Melhoria",
+      "## Ferramentas Recomendadas",
+    ];
+    const missing = required.filter((h) => !text.includes(h));
+    if (missing.length > 0) {
+      return { ok: false, reason: `Faltam secções: ${missing.join(", ")}` };
+    }
+    // Count bullets in the "Sugestões de Melhoria" section
+    const sugIdx = text.indexOf("## Sugestões de Melhoria");
+    const nextIdx = text.indexOf("## Ferramentas Recomendadas", sugIdx);
+    const section = text.slice(sugIdx, nextIdx > -1 ? nextIdx : undefined);
+    const bullets = section.match(/^\s*[-*]\s+/gm) ?? [];
+    if (bullets.length < 3) {
+      return {
+        ok: false,
+        reason: `A secção "Sugestões de Melhoria" precisa de pelo menos 3 itens (tem ${bullets.length}).`,
+      };
+    }
+    return { ok: true };
+  }
+  return { ok: true };
+}
+
 export const Route = createFileRoute("/api/generate")({
   server: {
     handlers: {
