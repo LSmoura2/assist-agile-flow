@@ -3,12 +3,14 @@ import { useMemo, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import {
+  AlertTriangle,
   BookOpen,
   Check,
   ClipboardCopy,
   ClipboardList,
   FileText,
   FlaskConical,
+  GitBranch,
   Loader2,
   Rocket,
   Sparkles,
@@ -32,6 +34,8 @@ const ICONS: Record<FeatureId, typeof BookOpen> = {
   sprint: Target,
   release: Rocket,
   tests: FlaskConical,
+  incident: AlertTriangle,
+  pipeline: GitBranch,
 };
 
 function AgileAIPage() {
