@@ -164,6 +164,38 @@ function ImportPage() {
     setFileName(null);
     setIssues([]);
     setError(null);
+    setSelected(new Set());
+  }
+
+  function toggleRow(id: string) {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  function toggleAll(ids: string[]) {
+    setSelected((prev) => {
+      const allSelected = ids.length > 0 && ids.every((id) => prev.has(id));
+      const next = new Set(prev);
+      if (allSelected) ids.forEach((id) => next.delete(id));
+      else ids.forEach((id) => next.add(id));
+      return next;
+    });
+  }
+
+  function moveSelectedToNextSprint() {
+    if (selected.size === 0) return;
+    const target = nextSprintLabel;
+    setIssues((prev) =>
+      prev.map((issue, idx) => {
+        const id = `DEV-${(240 + idx).toString()}`;
+        return selected.has(id) ? { ...issue, sprint: target } : issue;
+      }),
+    );
+    setSelected(new Set());
   }
 
   const enriched = useMemo(
