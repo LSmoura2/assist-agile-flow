@@ -17,7 +17,6 @@ import {
 } from "lucide-react";
 import {
   parseBacklogFile,
-  issuesToJiraCsv,
   type BacklogIssue,
 } from "@/lib/parse-backlog";
 
