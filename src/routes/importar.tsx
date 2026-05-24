@@ -4,6 +4,7 @@ import {
   ArrowDown,
   ArrowLeft,
   ArrowUp,
+  ArrowRightCircle,
   Download,
   FileSpreadsheet,
   Filter,
@@ -114,6 +115,17 @@ function ImportPage() {
   const [error, setError] = useState<string | null>(null);
   const [query, setQuery] = useState("");
   const [aiSort, setAiSort] = useState(false);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [nextSprintLabel, setNextSprintLabel] = useState("Próximo Sprint");
+
+  function detectNextSprint(list: BacklogIssue[]): string {
+    let max = 0;
+    for (const i of list) {
+      const m = i.sprint?.match(/(\d+)/);
+      if (m) max = Math.max(max, Number(m[1]));
+    }
+    return max > 0 ? `Sprint ${max + 1}` : "Próximo Sprint";
+  }
 
   async function handleFile(file: File) {
     setLoading(true);
@@ -128,6 +140,8 @@ function ImportPage() {
         );
       }
       setIssues(parsed);
+      setNextSprintLabel(detectNextSprint(parsed));
+      setSelected(new Set());
     } catch (e) {
       setError(e instanceof Error ? e.message : "Falha ao ler o ficheiro.");
     } finally {
@@ -150,6 +164,38 @@ function ImportPage() {
     setFileName(null);
     setIssues([]);
     setError(null);
+    setSelected(new Set());
+  }
+
+  function toggleRow(id: string) {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  function toggleAll(ids: string[]) {
+    setSelected((prev) => {
+      const allSelected = ids.length > 0 && ids.every((id) => prev.has(id));
+      const next = new Set(prev);
+      if (allSelected) ids.forEach((id) => next.delete(id));
+      else ids.forEach((id) => next.add(id));
+      return next;
+    });
+  }
+
+  function moveSelectedToNextSprint() {
+    if (selected.size === 0) return;
+    const target = nextSprintLabel;
+    setIssues((prev) =>
+      prev.map((issue, idx) => {
+        const id = `DEV-${(240 + idx).toString()}`;
+        return selected.has(id) ? { ...issue, sprint: target } : issue;
+      }),
+    );
+    setSelected(new Set());
   }
 
   const enriched = useMemo(
@@ -354,34 +400,79 @@ function ImportPage() {
         {/* Table */}
         {enriched.length > 0 && (
           <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
-            <div className="flex items-center justify-between border-b border-border px-5 py-3">
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-5 py-3">
               <h2 className="text-sm font-semibold">
                 {filtered.length.toLocaleString("pt-PT")} itens
                 <span className="ml-1 font-normal text-muted-foreground">
                   · {issues.length.toLocaleString("pt-PT")} no total
                 </span>
+                {selected.size > 0 && (
+                  <span className="ml-2 inline-flex items-center rounded-md bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary">
+                    {selected.size} selecionado{selected.size === 1 ? "" : "s"}
+                  </span>
+                )}
               </h2>
+              {selected.size > 0 && (
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setSelected(new Set())}
+                    className="inline-flex items-center gap-1.5 rounded-md border border-border bg-background/50 px-2.5 py-1.5 text-xs font-medium hover:bg-background"
+                  >
+                    Limpar seleção
+                  </button>
+                  <button
+                    type="button"
+                    onClick={moveSelectedToNextSprint}
+                    className="inline-flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground hover:opacity-90"
+                  >
+                    <ArrowRightCircle className="h-3.5 w-3.5" />
+                    Mover para {nextSprintLabel}
+                  </button>
+                </div>
+              )}
             </div>
 
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead className="bg-muted/40 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                   <tr>
+                    <th className="w-10 px-5 py-3">
+                      <input
+                        type="checkbox"
+                        aria-label="Selecionar todos"
+                        className="h-4 w-4 cursor-pointer rounded border-border accent-primary"
+                        checked={
+                          filtered.length > 0 &&
+                          filtered.every((e) => selected.has(e.id))
+                        }
+                        onChange={() => toggleAll(filtered.map((e) => e.id))}
+                      />
+                    </th>
                     <th className="px-5 py-3">ID</th>
                     <th className="px-5 py-3">Título</th>
                     <th className="px-5 py-3">Prioridade</th>
                     <th className="px-5 py-3 text-center">Pontos</th>
                     <th className="px-5 py-3">AI Score</th>
                     <th className="px-5 py-3">Labels</th>
-                    <th className="px-5 py-3">Responsável</th>
+                    <th className="px-5 py-3">Sprint</th>
                   </tr>
                 </thead>
                 <tbody>
                   {filtered.map((e) => (
                     <tr
                       key={e.id}
-                      className="border-t border-border/60 align-top transition-colors hover:bg-muted/30"
+                      className={`border-t border-border/60 align-top transition-colors hover:bg-muted/30 ${selected.has(e.id) ? "bg-primary/5" : ""}`}
                     >
+                      <td className="px-5 py-4 align-middle">
+                        <input
+                          type="checkbox"
+                          aria-label={`Selecionar ${e.id}`}
+                          className="h-4 w-4 cursor-pointer rounded border-border accent-primary"
+                          checked={selected.has(e.id)}
+                          onChange={() => toggleRow(e.id)}
+                        />
+                      </td>
                       <td className="px-5 py-4 align-middle text-sm font-medium text-muted-foreground">
                         {e.id}
                       </td>
