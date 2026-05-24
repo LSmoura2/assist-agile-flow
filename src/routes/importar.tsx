@@ -607,14 +607,24 @@ function ImportPage() {
                             {e.issue.description}
                           </p>
                         )}
-                        {topPicks.includes(e.id) && (
+                        {e.aiJustification ? (
                           <p
-                            className="mt-1.5 inline-flex items-center gap-1 text-xs"
+                            className="mt-1.5 inline-flex items-start gap-1 text-xs"
                             style={{ color: "var(--ai-to)" }}
                           >
-                            <Sparkles className="h-3 w-3" />
-                            Alto valor de negócio · critérios claros
+                            <Sparkles className="mt-0.5 h-3 w-3 shrink-0" />
+                            {e.aiJustification}
                           </p>
+                        ) : (
+                          topPicks.includes(e.id) && (
+                            <p
+                              className="mt-1.5 inline-flex items-center gap-1 text-xs"
+                              style={{ color: "var(--ai-to)" }}
+                            >
+                              <Sparkles className="h-3 w-3" />
+                              Alto valor de negócio · critérios claros
+                            </p>
+                          )
                         )}
                       </td>
                       <td className="px-5 py-4 align-middle">
