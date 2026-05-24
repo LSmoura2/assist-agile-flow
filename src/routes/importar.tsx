@@ -115,6 +115,17 @@ function ImportPage() {
   const [error, setError] = useState<string | null>(null);
   const [query, setQuery] = useState("");
   const [aiSort, setAiSort] = useState(false);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [nextSprintLabel, setNextSprintLabel] = useState("Próximo Sprint");
+
+  function detectNextSprint(list: BacklogIssue[]): string {
+    let max = 0;
+    for (const i of list) {
+      const m = i.sprint?.match(/(\d+)/);
+      if (m) max = Math.max(max, Number(m[1]));
+    }
+    return max > 0 ? `Sprint ${max + 1}` : "Próximo Sprint";
+  }
 
   async function handleFile(file: File) {
     setLoading(true);
