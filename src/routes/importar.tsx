@@ -208,6 +208,81 @@ function ImportPage() {
     setSelected(new Set());
   }
 
+  function norm(s: string) {
+    return s
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-z0-9]+/g, " ")
+      .trim();
+  }
+
+  async function runAiSort() {
+    if (issues.length === 0 || aiLoading) return;
+    setAiLoading(true);
+    setAiError(null);
+    try {
+      const input = issues.map((i) => `- ${i.summary}`).join("\n");
+      const res = await fetch("/api/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ feature: "backlog", input }),
+      });
+      const json = (await res.json()) as { output?: string; error?: string };
+      if (!res.ok) {
+        throw new Error(json.error ?? "Falha a contactar o serviço de IA.");
+      }
+      const output = json.output ?? "";
+      // Parse "N. **Título** — ..." optionally followed by "_Justificação: ..._"
+      const lineRe =
+        /^\s*(\d+)\.\s+\*\*(.+?)\*\*[^\n]*(?:\n[ \t]*_Justifica[çc][aã]o:\s*([^_]+?)\._?)?/gm;
+      const ranked: Array<{ rank: number; title: string; just: string }> = [];
+      let m: RegExpExecArray | null;
+      while ((m = lineRe.exec(output)) !== null) {
+        ranked.push({
+          rank: Number(m[1]),
+          title: m[2].trim(),
+          just: (m[3] ?? "").trim(),
+        });
+      }
+      if (ranked.length === 0) {
+        throw new Error("Não foi possível interpretar a resposta da IA.");
+      }
+      // Match each ranked title to an issue by normalized inclusion
+      const normIssues = issues.map((i, idx) => ({
+        id: `DEV-${(240 + idx).toString()}`,
+        n: norm(i.summary),
+      }));
+      const scores = new Map<string, number>();
+      const justs = new Map<string, string>();
+      const used = new Set<string>();
+      ranked.sort((a, b) => a.rank - b.rank);
+      ranked.forEach((r, idx) => {
+        const nt = norm(r.title);
+        const match = normIssues.find(
+          (ni) =>
+            !used.has(ni.id) && (ni.n === nt || ni.n.includes(nt) || nt.includes(ni.n)),
+        );
+        if (!match) return;
+        used.add(match.id);
+        const score = Math.max(50, 99 - idx * Math.max(1, Math.floor(49 / ranked.length)));
+        scores.set(match.id, score);
+        if (r.just) justs.set(match.id, r.just);
+      });
+      if (scores.size === 0) {
+        throw new Error("A IA respondeu mas não foi possível mapear os itens.");
+      }
+      setAiScores(scores);
+      setAiJustifications(justs);
+      setAiSort(true);
+    } catch (e) {
+      setAiError(e instanceof Error ? e.message : "Erro inesperado.");
+    } finally {
+      setAiLoading(false);
+    }
+  }
+
+
   const enriched = useMemo(
     () =>
       issues.map((i, idx) => {
