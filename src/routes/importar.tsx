@@ -117,6 +117,12 @@ function ImportPage() {
   const [aiSort, setAiSort] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [nextSprintLabel, setNextSprintLabel] = useState("Próximo Sprint");
+  const [aiScores, setAiScores] = useState<Map<string, number>>(new Map());
+  const [aiJustifications, setAiJustifications] = useState<Map<string, string>>(
+    new Map(),
+  );
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiError, setAiError] = useState<string | null>(null);
 
   function detectNextSprint(list: BacklogIssue[]): string {
     let max = 0;
@@ -142,6 +148,10 @@ function ImportPage() {
       setIssues(parsed);
       setNextSprintLabel(detectNextSprint(parsed));
       setSelected(new Set());
+      setAiScores(new Map());
+      setAiJustifications(new Map());
+      setAiError(null);
+      setAiSort(false);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Falha ao ler o ficheiro.");
     } finally {
@@ -198,19 +208,98 @@ function ImportPage() {
     setSelected(new Set());
   }
 
+  function norm(s: string) {
+    return s
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-z0-9]+/g, " ")
+      .trim();
+  }
+
+  async function runAiSort() {
+    if (issues.length === 0 || aiLoading) return;
+    setAiLoading(true);
+    setAiError(null);
+    try {
+      const input = issues.map((i) => `- ${i.summary}`).join("\n");
+      const res = await fetch("/api/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ feature: "backlog", input }),
+      });
+      const json = (await res.json()) as { output?: string; error?: string };
+      if (!res.ok) {
+        throw new Error(json.error ?? "Falha a contactar o serviço de IA.");
+      }
+      const output = json.output ?? "";
+      // Parse "N. **Título** — ..." optionally followed by "_Justificação: ..._"
+      const lineRe =
+        /^\s*(\d+)\.\s+\*\*(.+?)\*\*[^\n]*(?:\n[ \t]*_Justifica[çc][aã]o:\s*([^_]+?)\._?)?/gm;
+      const ranked: Array<{ rank: number; title: string; just: string }> = [];
+      let m: RegExpExecArray | null;
+      while ((m = lineRe.exec(output)) !== null) {
+        ranked.push({
+          rank: Number(m[1]),
+          title: m[2].trim(),
+          just: (m[3] ?? "").trim(),
+        });
+      }
+      if (ranked.length === 0) {
+        throw new Error("Não foi possível interpretar a resposta da IA.");
+      }
+      // Match each ranked title to an issue by normalized inclusion
+      const normIssues = issues.map((i, idx) => ({
+        id: `DEV-${(240 + idx).toString()}`,
+        n: norm(i.summary),
+      }));
+      const scores = new Map<string, number>();
+      const justs = new Map<string, string>();
+      const used = new Set<string>();
+      ranked.sort((a, b) => a.rank - b.rank);
+      ranked.forEach((r, idx) => {
+        const nt = norm(r.title);
+        const match = normIssues.find(
+          (ni) =>
+            !used.has(ni.id) && (ni.n === nt || ni.n.includes(nt) || nt.includes(ni.n)),
+        );
+        if (!match) return;
+        used.add(match.id);
+        const score = Math.max(50, 99 - idx * Math.max(1, Math.floor(49 / ranked.length)));
+        scores.set(match.id, score);
+        if (r.just) justs.set(match.id, r.just);
+      });
+      if (scores.size === 0) {
+        throw new Error("A IA respondeu mas não foi possível mapear os itens.");
+      }
+      setAiScores(scores);
+      setAiJustifications(justs);
+      setAiSort(true);
+    } catch (e) {
+      setAiError(e instanceof Error ? e.message : "Erro inesperado.");
+    } finally {
+      setAiLoading(false);
+    }
+  }
+
+
   const enriched = useMemo(
     () =>
       issues.map((i, idx) => {
         const prio = normalizePriority(i.priority);
+        const id = `DEV-${(240 + idx).toString()}`;
+        const aiScore = aiScores.get(id);
         return {
           issue: i,
-          id: `DEV-${(240 + idx).toString()}`,
+          id,
           prio,
-          score: aiScoreFor(i, prio),
+          score: aiScore ?? aiScoreFor(i, prio),
+          aiRanked: aiScore !== undefined,
+          aiJustification: aiJustifications.get(id) ?? null,
           labels: labelsFor(i),
         };
       }),
-    [issues],
+    [issues, aiScores, aiJustifications],
   );
 
   const filtered = useMemo(() => {
@@ -285,14 +374,47 @@ function ImportPage() {
           </button>
           <button
             type="button"
-            onClick={() => setAiSort((v) => !v)}
-            className="inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold text-white shadow-md transition-opacity hover:opacity-90"
+            disabled={aiLoading || issues.length === 0}
+            onClick={() => {
+              if (aiScores.size === 0) {
+                void runAiSort();
+              } else {
+                setAiSort((v) => !v);
+              }
+            }}
+            className="inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold text-white shadow-md transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
             style={{ background: "var(--gradient-ai)" }}
+            title="Priorizar com EP-2 (Lovable AI)"
           >
-            <Sparkles className="h-4 w-4" />
-            {aiSort ? "Ordem AI ✓" : "AI Sort"}
+            {aiLoading ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Sparkles className="h-4 w-4" />
+            )}
+            {aiLoading
+              ? "A priorizar…"
+              : aiScores.size === 0
+                ? "AI Sort"
+                : aiSort
+                  ? "Ordem AI ✓"
+                  : "Aplicar Ordem AI"}
           </button>
+          {aiScores.size > 0 && !aiLoading && (
+            <button
+              type="button"
+              onClick={() => void runAiSort()}
+              className="text-xs font-medium text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
+            >
+              Recalcular
+            </button>
+          )}
         </div>
+        {aiError && (
+          <div className="flex items-start gap-2 rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+            <XCircle className="mt-0.5 h-4 w-4 shrink-0" />
+            <span>{aiError}</span>
+          </div>
+        )}
 
         {/* Upload card (compact) */}
         <div className="rounded-2xl border border-border bg-card p-4 shadow-sm">
@@ -485,14 +607,24 @@ function ImportPage() {
                             {e.issue.description}
                           </p>
                         )}
-                        {topPicks.includes(e.id) && (
+                        {e.aiJustification ? (
                           <p
-                            className="mt-1.5 inline-flex items-center gap-1 text-xs"
+                            className="mt-1.5 inline-flex items-start gap-1 text-xs"
                             style={{ color: "var(--ai-to)" }}
                           >
-                            <Sparkles className="h-3 w-3" />
-                            Alto valor de negócio · critérios claros
+                            <Sparkles className="mt-0.5 h-3 w-3 shrink-0" />
+                            {e.aiJustification}
                           </p>
+                        ) : (
+                          topPicks.includes(e.id) && (
+                            <p
+                              className="mt-1.5 inline-flex items-center gap-1 text-xs"
+                              style={{ color: "var(--ai-to)" }}
+                            >
+                              <Sparkles className="h-3 w-3" />
+                              Alto valor de negócio · critérios claros
+                            </p>
+                          )
                         )}
                       </td>
                       <td className="px-5 py-4 align-middle">
