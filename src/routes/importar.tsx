@@ -117,6 +117,12 @@ function ImportPage() {
   const [aiSort, setAiSort] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [nextSprintLabel, setNextSprintLabel] = useState("Próximo Sprint");
+  const [aiScores, setAiScores] = useState<Map<string, number>>(new Map());
+  const [aiJustifications, setAiJustifications] = useState<Map<string, string>>(
+    new Map(),
+  );
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiError, setAiError] = useState<string | null>(null);
 
   function detectNextSprint(list: BacklogIssue[]): string {
     let max = 0;
