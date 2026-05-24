@@ -65,7 +65,8 @@ async function callModel(opts: { system: string; userInput: string }): Promise<
 > {
   const key = process.env.LOVABLE_API_KEY;
   if (!key) {
-    return { ok: false, status: 500, message: "LOVABLE_API_KEY não configurada." };
+    console.error("generate: LOVABLE_API_KEY not configured");
+    return { ok: false, status: 500, message: "Serviço de IA não disponível." };
   }
   try {
     const gateway = createLovableAiGatewayProvider(key);
@@ -79,20 +80,45 @@ async function callModel(opts: { system: string; userInput: string }): Promise<
   } catch (err) {
     const e = err as { statusCode?: number; status?: number; message?: string };
     const status = e.statusCode ?? e.status ?? 500;
-    return { ok: false, status, message: e.message ?? "Erro desconhecido" };
+    console.error("generate: AI gateway error", { status, message: e.message });
+    return { ok: false, status, message: "O serviço de IA devolveu um erro inesperado." };
   }
 }
+
+function isSameOrigin(request: Request): boolean {
+  const host = request.headers.get("host");
+  if (!host) return false;
+  const origin = request.headers.get("origin");
+  const referer = request.headers.get("referer");
+  const check = (val: string | null) => {
+    if (!val) return false;
+    try {
+      return new URL(val).host === host;
+    } catch {
+      return false;
+    }
+  };
+  if (!origin && !referer) return false;
+  if (origin && !check(origin)) return false;
+  if (!origin && referer && !check(referer)) return false;
+  return true;
+}
+
 
 export const Route = createFileRoute("/api/generate")({
   server: {
     handlers: {
       POST: async ({ request }) => {
+        if (!isSameOrigin(request)) {
+          return Response.json({ error: "Pedido não autorizado." }, { status: 403 });
+        }
         let payload: unknown;
         try {
           payload = await request.json();
         } catch {
           return Response.json({ error: "Corpo do pedido inválido." }, { status: 400 });
         }
+
 
         const parsed = RequestSchema.safeParse(payload);
         if (!parsed.success) {
