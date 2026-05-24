@@ -4,6 +4,7 @@ import {
   ArrowDown,
   ArrowLeft,
   ArrowUp,
+  ArrowRightCircle,
   Download,
   FileSpreadsheet,
   Filter,
