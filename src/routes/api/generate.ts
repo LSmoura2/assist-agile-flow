@@ -109,12 +109,16 @@ export const Route = createFileRoute("/api/generate")({
   server: {
     handlers: {
       POST: async ({ request }) => {
+        if (!isSameOrigin(request)) {
+          return Response.json({ error: "Pedido não autorizado." }, { status: 403 });
+        }
         let payload: unknown;
         try {
           payload = await request.json();
         } catch {
           return Response.json({ error: "Corpo do pedido inválido." }, { status: 400 });
         }
+
 
         const parsed = RequestSchema.safeParse(payload);
         if (!parsed.success) {
