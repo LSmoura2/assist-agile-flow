@@ -17,7 +17,6 @@ import {
 } from "lucide-react";
 import {
   parseBacklogFile,
-  issuesToJiraCsv,
   type BacklogIssue,
 } from "@/lib/parse-backlog";
 
@@ -160,12 +159,57 @@ function ImportPage() {
   }
 
   function handleDownload() {
-    const csv = issuesToJiraCsv(issues);
+    if (filtered.length === 0) return;
+    const headers = [
+      "ID",
+      "Summary",
+      "Issue Type",
+      "Priority",
+      "Normalized Priority",
+      "Story Points",
+      "Epic Link",
+      "Sprint",
+      "Description",
+      "Acceptance Criteria",
+      "AI Score",
+      "Labels",
+      "AI Justification",
+    ];
+    const escape = (v: unknown) => {
+      const s = v === null || v === undefined ? "" : String(v);
+      if (/[",\n]/.test(s)) return `"${s.replace(/"/g, '""')}"`;
+      return s;
+    };
+    const prioLabel = (p: PriorityKey) =>
+      p === "high" ? "Alta" : p === "low" ? "Baixa" : "Média";
+    const lines = [headers.join(",")];
+    for (const e of filtered) {
+      lines.push(
+        [
+          e.id,
+          e.issue.summary,
+          e.issue.issueType,
+          e.issue.priority,
+          prioLabel(e.prio),
+          e.issue.storyPoints ?? "",
+          e.issue.epicLink,
+          e.issue.sprint,
+          e.issue.description,
+          e.issue.acceptanceCriteria,
+          e.score,
+          e.labels.join("; "),
+          e.aiJustification ?? "",
+        ]
+          .map(escape)
+          .join(","),
+      );
+    }
+    const csv = lines.join("\n");
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = "backlog_jira.csv";
+    a.download = "backlog_exportado.csv";
     a.click();
     URL.revokeObjectURL(url);
   }
