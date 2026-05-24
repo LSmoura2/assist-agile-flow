@@ -148,6 +148,10 @@ function ImportPage() {
       setIssues(parsed);
       setNextSprintLabel(detectNextSprint(parsed));
       setSelected(new Set());
+      setAiScores(new Map());
+      setAiJustifications(new Map());
+      setAiError(null);
+      setAiSort(false);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Falha ao ler o ficheiro.");
     } finally {
