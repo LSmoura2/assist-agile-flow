@@ -140,6 +140,8 @@ function ImportPage() {
         );
       }
       setIssues(parsed);
+      setNextSprintLabel(detectNextSprint(parsed));
+      setSelected(new Set());
     } catch (e) {
       setError(e instanceof Error ? e.message : "Falha ao ler o ficheiro.");
     } finally {
