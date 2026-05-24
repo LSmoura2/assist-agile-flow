@@ -287,15 +287,19 @@ function ImportPage() {
     () =>
       issues.map((i, idx) => {
         const prio = normalizePriority(i.priority);
+        const id = `DEV-${(240 + idx).toString()}`;
+        const aiScore = aiScores.get(id);
         return {
           issue: i,
-          id: `DEV-${(240 + idx).toString()}`,
+          id,
           prio,
-          score: aiScoreFor(i, prio),
+          score: aiScore ?? aiScoreFor(i, prio),
+          aiRanked: aiScore !== undefined,
+          aiJustification: aiJustifications.get(id) ?? null,
           labels: labelsFor(i),
         };
       }),
-    [issues],
+    [issues, aiScores, aiJustifications],
   );
 
   const filtered = useMemo(() => {
