@@ -374,14 +374,47 @@ function ImportPage() {
           </button>
           <button
             type="button"
-            onClick={() => setAiSort((v) => !v)}
-            className="inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold text-white shadow-md transition-opacity hover:opacity-90"
+            disabled={aiLoading || issues.length === 0}
+            onClick={() => {
+              if (aiScores.size === 0) {
+                void runAiSort();
+              } else {
+                setAiSort((v) => !v);
+              }
+            }}
+            className="inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold text-white shadow-md transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
             style={{ background: "var(--gradient-ai)" }}
+            title="Priorizar com EP-2 (Lovable AI)"
           >
-            <Sparkles className="h-4 w-4" />
-            {aiSort ? "Ordem AI ✓" : "AI Sort"}
+            {aiLoading ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Sparkles className="h-4 w-4" />
+            )}
+            {aiLoading
+              ? "A priorizar…"
+              : aiScores.size === 0
+                ? "AI Sort"
+                : aiSort
+                  ? "Ordem AI ✓"
+                  : "Aplicar Ordem AI"}
           </button>
+          {aiScores.size > 0 && !aiLoading && (
+            <button
+              type="button"
+              onClick={() => void runAiSort()}
+              className="text-xs font-medium text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
+            >
+              Recalcular
+            </button>
+          )}
         </div>
+        {aiError && (
+          <div className="flex items-start gap-2 rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+            <XCircle className="mt-0.5 h-4 w-4 shrink-0" />
+            <span>{aiError}</span>
+          </div>
+        )}
 
         {/* Upload card (compact) */}
         <div className="rounded-2xl border border-border bg-card p-4 shadow-sm">
