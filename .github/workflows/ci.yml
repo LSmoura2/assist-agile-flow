@@ -10,8 +10,6 @@ jobs:
   build:
     name: Build & Lint
     runs-on: ubuntu-latest
-    outputs:
-      should_deploy: ${{ github.ref == 'refs/heads/main' && github.event_name == 'push' }}
 
     steps:
       - name: Checkout code
@@ -56,6 +54,13 @@ jobs:
         run: bun run build
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+
+      - name: Register workers.dev subdomain
+        run: bunx wrangler subdomain create agileai-assistant || true
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        continue-on-error: true
 
       - name: Deploy
         run: bunx wrangler deploy
