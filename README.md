@@ -2,6 +2,8 @@
 
 AI-powered assistant for Agile and DevOps teams - **Mestrado em Informática e Gestão · ISCTE-IUL · 2025/2026**
 
+> 🚀 **Live:** [https://tanstack-start-app.agileai-assistant.workers.dev](https://tanstack-start-app.agileai-assistant.workers.dev)
+
 ## O que faz
 
 O AgileAI Assistant ajuda equipas de software com funcionalidades de IA para:
