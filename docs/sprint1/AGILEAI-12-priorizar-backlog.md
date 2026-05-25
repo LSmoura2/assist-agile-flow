@@ -1,6 +1,6 @@
-# AGILEAI-12 — Priorizar lista de backlog items por valor, risco e esforço
+# AGILEAI-12 - Priorizar lista de backlog items por valor, risco e esforço
 
-**Épico:** EP-2 — Gestão e Priorização de Backlog
+**Épico:** EP-2 - Gestão e Priorização de Backlog
 **Sprint:** Sprint 1 (15 Mar – 29 Mar 2026)
 **Story Points:** 5
 **Estado:** ✅ DONE
