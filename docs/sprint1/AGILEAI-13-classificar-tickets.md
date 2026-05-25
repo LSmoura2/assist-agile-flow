@@ -1,6 +1,6 @@
-# AGILEAI-13 — Classificar tickets por tipo (bug, feature, melhoria, dívida técnica)
+# AGILEAI-13 - Classificar tickets por tipo (bug, feature, melhoria, dívida técnica)
 
-**Épico:** EP-2 — Gestão e Priorização de Backlog
+**Épico:** EP-2 - Gestão e Priorização de Backlog
 **Sprint:** Sprint 1 (15 Mar – 29 Mar 2026)
 **Story Points:** 3
 **Estado:** ✅ DONE
