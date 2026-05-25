@@ -1,6 +1,6 @@
-# AGILEAI-8 — Gerar User Story a partir de descrição em linguagem natural
+# AGILEAI-8 - Gerar User Story a partir de descrição em linguagem natural
 
-**Épico:** EP-1 — Geração e Melhoria de User Stories
+**Épico:** EP-1 - Geração e Melhoria de User Stories
 **Sprint:** Sprint 1 (15 Mar – 29 Mar 2026)
 **Story Points:** 5
 **Estado:** ✅ DONE
