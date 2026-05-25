@@ -1,6 +1,6 @@
 # AgileAI Assistant
 
-AI-powered assistant for Agile and DevOps teams — **Mestrado em Informática e Gestão · ISCTE-IUL · 2025/2026**
+AI-powered assistant for Agile and DevOps teams - **Mestrado em Informática e Gestão · ISCTE-IUL · 2025/2026**
 
 ## O que faz
 
