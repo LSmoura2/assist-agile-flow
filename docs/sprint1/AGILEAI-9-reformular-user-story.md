@@ -1,4 +1,4 @@
-# AGILEAI-9 — Reformular User Story existente para melhorar clareza
+# AGILEAI-9 - Reformular User Story existente para melhorar clareza
 
 **Épico:** EP-1 — Geração e Melhoria de User Stories
 **Sprint:** Sprint 1 (15 Mar – 29 Mar 2026)
