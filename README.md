@@ -22,7 +22,7 @@ O AgileAI Assistant ajuda equipas de software com funcionalidades de IA para:
 | Backend | Cloudflare Workers (src/server.ts) |
 | IA | Anthropic Claude via AI SDK |
 | Package Manager | Bun |
-| Deploy | Wrangler CLI → Cloudflare Workers |
+| Deploy | Wrangler CLI - Cloudflare Workers |
 
 ---
 
@@ -48,12 +48,6 @@ bun install
 # 3. Criar ficheiro de variáveis de ambiente locais
 cp .dev.vars.example .dev.vars
 # Editar .dev.vars e preencher a chave da API
-```
-
-### Ficheiro `.dev.vars` (segredos locais — nunca fazer commit)
-
-```
-ANTHROPIC_API_KEY=sk-ant-xxxxxxxxxxxxxxxxxx
 ```
 
 ---
@@ -110,7 +104,7 @@ A aplicação fica publicada em `https://tanstack-start-app.<subdomain>.workers.
 
 | Variável | Obrigatória | Descrição |
 |----------|-------------|-----------|
-| `ANTHROPIC_API_KEY` | Sim | Chave da API Anthropic (Console → API Keys) |
+| - | Sim | Chave da API Anthropic (Console → API Keys) |
 
 ---
 
@@ -137,9 +131,9 @@ assist-agile-flow/
 
 O pipeline GitHub Actions (`.github/workflows/ci.yml`) executa automaticamente em cada push:
 
-1. `bun install` — instalar dependências
-2. `bun run lint` — verificar qualidade do código
-3. `bun run build` — validar build de produção
+1. `bun install` - instalar dependências
+2. `bun run lint` - verificar qualidade do código
+3. `bun run build` - validar build de produção
 
 ---
 
@@ -165,7 +159,7 @@ Valores de `feature`: `user-story` · `refine-story` · `acceptance-criteria` ·
 
 ## Projeto académico
 
-- **Unidade Curricular:** Gestão de Projetos de Aplicações (GPA)
+- **Unidade Curricular:** Gestão de Projetos de Ageis (GPA)
 - **Instituição:** ISCTE-IUL
 - **Ano letivo:** 2025/2026
 - **Jira:** [AGILEAI @ Atlassian](https://iscte-iul-team-lpv3q19q.atlassian.net/jira/software/projects/AGILEAI/boards/34)
