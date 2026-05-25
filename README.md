@@ -31,7 +31,6 @@ O AgileAI Assistant ajuda equipas de software com funcionalidades de IA para:
 - [Bun](https://bun.sh) >= 1.1 — `curl -fsSL https://bun.sh/install | bash`
 - [Wrangler CLI](https://developers.cloudflare.com/workers/wrangler/) — `bun install -g wrangler`
 - Conta [Cloudflare](https://dash.cloudflare.com) (gratuita)
-- Chave API da [Anthropic](https://console.anthropic.com)
 
 ---
 
