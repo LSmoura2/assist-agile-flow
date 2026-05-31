@@ -164,3 +164,5 @@ Valores de `feature`: `user-story` · `refine-story` · `acceptance-criteria` ·
 - **Instituição:** ISCTE-IUL
 - **Ano letivo:** 2025/2026
 - **Jira:** [AGILEAI @ Atlassian](https://iscte-iul-team-lpv3q19q.atlassian.net/jira/software/projects/AGILEAI/boards/34)
+- **Figma**: https://fizzy-nimbus-47004714.figma.site/
+- 
