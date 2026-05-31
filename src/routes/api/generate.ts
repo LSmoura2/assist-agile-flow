@@ -10,7 +10,7 @@ const RequestSchema = z.object({
   input: z.string().trim().min(1, "Input is required").max(20000, "Input is too long"),
 });
 
-const MODEL = "deepseek-chat";
+const MODEL = "gemini-2.0-flash";
 
 function validateOutput(
   feature: FeatureId,
