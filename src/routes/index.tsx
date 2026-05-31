@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import type { BacklogIssue } from "@/lib/parse-backlog";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import {
