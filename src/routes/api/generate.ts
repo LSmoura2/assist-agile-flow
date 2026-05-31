@@ -63,15 +63,19 @@ function validateOutput(
 async function callModel(opts: { system: string; userInput: string }): Promise<
   { ok: true; text: string } | { ok: false; status: number; message: string }
 > {
-  const key = process.env.LOVABLE_API_KEY;
+  const key = process.env.DEEPSEEK_API_KEY;
   if (!key) {
-    console.error("generate: LOVABLE_API_KEY not configured");
+    console.error("generate: DEEPSEEK_API_KEY not configured");
     return { ok: false, status: 500, message: "Serviço de IA não disponível." };
   }
   try {
-    const gateway = createLovableAiGatewayProvider(key);
+    const deepseek = createOpenAICompatible({
+      name: "deepseek",
+      baseURL: "https://api.deepseek.com/v1",
+      headers: { Authorization: `Bearer ${key}` },
+    });
     const { text } = await generateText({
-      model: gateway(MODEL),
+      model: deepseek(MODEL),
       system: opts.system,
       prompt: opts.userInput,
       temperature: 0,
