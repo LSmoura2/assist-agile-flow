@@ -2,7 +2,7 @@ import "@tanstack/react-start";
 import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
 import { generateText } from "ai";
-import { createLovableAiGatewayProvider } from "@/lib/ai-gateway";
+import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
 import { FEATURE_IDS, SYSTEM_PROMPTS, type FeatureId } from "@/lib/prompts";
 
 const RequestSchema = z.object({
@@ -10,7 +10,7 @@ const RequestSchema = z.object({
   input: z.string().trim().min(1, "Input is required").max(20000, "Input is too long"),
 });
 
-const MODEL = "google/gemini-3-flash-preview";
+const MODEL = "deepseek-chat";
 
 function validateOutput(
   feature: FeatureId,
