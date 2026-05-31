@@ -101,6 +101,24 @@ function AgileAIPage() {
   const [validation, setValidation] = useState<{ title: string; hints: string[] } | null>(null);
   const [copied, setCopied] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [importedBacklog, setImportedBacklog] = useState<BacklogIssue[]>([]);
+
+  // Carrega o backlog importado (persistido pela página /importar) quando a
+  // funcionalidade EP-2 "Priorizar Backlog" está ativa.
+  useEffect(() => {
+    if (feature !== "backlog") return;
+    try {
+      const raw = localStorage.getItem("imported-backlog");
+      if (!raw) {
+        setImportedBacklog([]);
+        return;
+      }
+      const parsed = JSON.parse(raw) as BacklogIssue[];
+      setImportedBacklog(Array.isArray(parsed) ? parsed : []);
+    } catch {
+      setImportedBacklog([]);
+    }
+  }, [feature]);
 
   const activeFeature = useMemo(
     () => FEATURES.find((f) => f.id === feature)!,
