@@ -230,6 +230,11 @@ function ImportPage() {
     setIssues([]);
     setError(null);
     setSelected(new Set());
+    try {
+      localStorage.removeItem("imported-backlog");
+    } catch {
+      // ignore
+    }
   }
 
   function toggleRow(id: string) {
