@@ -105,7 +105,7 @@ A aplicação fica publicada em `https://tanstack-start-app.<subdomain>.workers.
 
 | Variável | Obrigatória | Descrição |
 |----------|-------------|-----------|
-| - | Sim | Chave da API Anthropic (Console → API Keys) |
+| - | Sim | Chave da API IA (Console - API Keys) |
 
 ---
 
