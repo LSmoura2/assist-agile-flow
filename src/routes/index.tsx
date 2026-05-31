@@ -133,12 +133,37 @@ function AgileAIPage() {
 
   async function handleGenerate() {
     if (loading) return;
-    const check = validateInput(feature, input);
-    if (!check.ok) {
-      setValidation({ title: check.title, hints: check.hints });
-      setError(null);
-      return;
+
+    let effectiveInput = input;
+    if (feature === "backlog") {
+      if (importedBacklog.length < 2) {
+        setValidation({
+          title: "Importa primeiro um backlog para priorizar.",
+          hints: [
+            'Vai a "Importar Excel" no menu lateral e carrega um ficheiro .xlsx (formato Jira).',
+            "São necessários pelo menos 2 itens para a IA produzir uma ordenação útil.",
+          ],
+        });
+        setError(null);
+        return;
+      }
+      effectiveInput = importedBacklog
+        .map((i) => {
+          const sp = i.storyPoints != null ? ` (${i.storyPoints} SP)` : "";
+          const type = i.issueType ? ` [${i.issueType}]` : "";
+          const prio = i.priority ? ` — prioridade ${i.priority}` : "";
+          return `- ${i.summary}${type}${prio}${sp}`;
+        })
+        .join("\n");
+    } else {
+      const check = validateInput(feature, input);
+      if (!check.ok) {
+        setValidation({ title: check.title, hints: check.hints });
+        setError(null);
+        return;
+      }
     }
+
     setValidation(null);
     setLoading(true);
     setError(null);
@@ -147,7 +172,7 @@ function AgileAIPage() {
       const res = await fetch("/api/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ feature, input }),
+        body: JSON.stringify({ feature, input: effectiveInput }),
       });
       const data = (await res.json()) as { output?: string; error?: string };
       if (!res.ok) {
