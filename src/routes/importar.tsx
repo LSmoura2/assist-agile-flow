@@ -123,6 +123,17 @@ function ImportPage() {
   const [aiLoading, setAiLoading] = useState(false);
   const [aiError, setAiError] = useState<string | null>(null);
 
+  // Persist imported backlog so the EP-2 "Priorizar Backlog" view can use it.
+  useEffect(() => {
+    try {
+      if (issues.length > 0) {
+        localStorage.setItem("imported-backlog", JSON.stringify(issues));
+      }
+    } catch {
+      // ignore quota/serialization errors
+    }
+  }, [issues]);
+
   function detectNextSprint(list: BacklogIssue[]): string {
     let max = 0;
     for (const i of list) {
