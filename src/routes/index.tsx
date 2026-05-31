@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import type { BacklogIssue } from "@/lib/parse-backlog";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import {
@@ -100,6 +101,24 @@ function AgileAIPage() {
   const [validation, setValidation] = useState<{ title: string; hints: string[] } | null>(null);
   const [copied, setCopied] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [importedBacklog, setImportedBacklog] = useState<BacklogIssue[]>([]);
+
+  // Carrega o backlog importado (persistido pela página /importar) quando a
+  // funcionalidade EP-2 "Priorizar Backlog" está ativa.
+  useEffect(() => {
+    if (feature !== "backlog") return;
+    try {
+      const raw = localStorage.getItem("imported-backlog");
+      if (!raw) {
+        setImportedBacklog([]);
+        return;
+      }
+      const parsed = JSON.parse(raw) as BacklogIssue[];
+      setImportedBacklog(Array.isArray(parsed) ? parsed : []);
+    } catch {
+      setImportedBacklog([]);
+    }
+  }, [feature]);
 
   const activeFeature = useMemo(
     () => FEATURES.find((f) => f.id === feature)!,
@@ -114,12 +133,37 @@ function AgileAIPage() {
 
   async function handleGenerate() {
     if (loading) return;
-    const check = validateInput(feature, input);
-    if (!check.ok) {
-      setValidation({ title: check.title, hints: check.hints });
-      setError(null);
-      return;
+
+    let effectiveInput = input;
+    if (feature === "backlog") {
+      if (importedBacklog.length < 2) {
+        setValidation({
+          title: "Importa primeiro um backlog para priorizar.",
+          hints: [
+            'Vai a "Importar Excel" no menu lateral e carrega um ficheiro .xlsx (formato Jira).',
+            "São necessários pelo menos 2 itens para a IA produzir uma ordenação útil.",
+          ],
+        });
+        setError(null);
+        return;
+      }
+      effectiveInput = importedBacklog
+        .map((i) => {
+          const sp = i.storyPoints != null ? ` (${i.storyPoints} SP)` : "";
+          const type = i.issueType ? ` [${i.issueType}]` : "";
+          const prio = i.priority ? ` — prioridade ${i.priority}` : "";
+          return `- ${i.summary}${type}${prio}${sp}`;
+        })
+        .join("\n");
+    } else {
+      const check = validateInput(feature, input);
+      if (!check.ok) {
+        setValidation({ title: check.title, hints: check.hints });
+        setError(null);
+        return;
+      }
     }
+
     setValidation(null);
     setLoading(true);
     setError(null);
@@ -128,7 +172,7 @@ function AgileAIPage() {
       const res = await fetch("/api/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ feature, input }),
+        body: JSON.stringify({ feature, input: effectiveInput }),
       });
       const data = (await res.json()) as { output?: string; error?: string };
       if (!res.ok) {
@@ -335,27 +379,80 @@ function AgileAIPage() {
           {/* Input card */}
           <section className="rounded-2xl border border-border bg-card shadow-sm">
             <div className="flex items-center justify-between border-b border-border px-5 py-3">
-              <h2 className="text-sm font-semibold">Descrição</h2>
+              <h2 className="text-sm font-semibold">
+                {feature === "backlog" ? "Backlog importado" : "Descrição"}
+              </h2>
               <span className="text-xs text-muted-foreground">
-                {charCount.toLocaleString("pt-PT")} caracteres · {wordCount.toLocaleString("pt-PT")} palavras
+                {feature === "backlog"
+                  ? `${importedBacklog.length.toLocaleString("pt-PT")} ${importedBacklog.length === 1 ? "item" : "itens"}`
+                  : `${charCount.toLocaleString("pt-PT")} caracteres · ${wordCount.toLocaleString("pt-PT")} palavras`}
               </span>
             </div>
 
             <div className="p-5">
-              <label htmlFor="ai-input" className="sr-only">
-                Descrição
-              </label>
-              <textarea
-                id="ai-input"
-                value={input}
-                onChange={(e) => {
-                  setInput(e.target.value);
-                  if (validation) setValidation(null);
-                }}
-                placeholder={PLACEHOLDERS[feature]}
-                rows={9}
-                className="w-full resize-y rounded-lg border border-input bg-background px-3 py-2.5 text-sm leading-relaxed text-foreground placeholder:text-muted-foreground/70 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
-              />
+              {feature === "backlog" ? (
+                importedBacklog.length === 0 ? (
+                  <div className="rounded-lg border border-dashed border-border bg-background/40 p-6 text-center">
+                    <ClipboardList className="mx-auto h-8 w-8 text-muted-foreground/70" />
+                    <p className="mt-3 text-sm font-medium text-foreground">
+                      Nenhum backlog importado.
+                    </p>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      A IA irá priorizar os itens que importares a partir do Excel/Jira.
+                    </p>
+                    <Link
+                      to="/importar"
+                      className="mt-4 inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90"
+                    >
+                      <FileSpreadsheet className="h-4 w-4" />
+                      Importar Excel
+                    </Link>
+                  </div>
+                ) : (
+                  <div className="max-h-72 overflow-y-auto rounded-lg border border-border bg-background/60">
+                    <ul className="divide-y divide-border/60">
+                      {importedBacklog.map((i, idx) => (
+                        <li key={idx} className="flex items-start gap-3 px-3 py-2 text-sm">
+                          <span className="mt-0.5 inline-flex h-5 min-w-[1.5rem] items-center justify-center rounded bg-muted px-1.5 text-[10px] font-semibold tabular-nums text-muted-foreground">
+                            {idx + 1}
+                          </span>
+                          <div className="min-w-0 flex-1">
+                            <p className="truncate font-medium text-foreground">
+                              {i.summary}
+                            </p>
+                            <p className="mt-0.5 text-xs text-muted-foreground">
+                              {[
+                                i.issueType,
+                                i.priority && `prioridade ${i.priority}`,
+                                i.storyPoints != null && `${i.storyPoints} SP`,
+                              ]
+                                .filter(Boolean)
+                                .join(" · ") || "sem metadados"}
+                            </p>
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )
+              ) : (
+                <>
+                  <label htmlFor="ai-input" className="sr-only">
+                    Descrição
+                  </label>
+                  <textarea
+                    id="ai-input"
+                    value={input}
+                    onChange={(e) => {
+                      setInput(e.target.value);
+                      if (validation) setValidation(null);
+                    }}
+                    placeholder={PLACEHOLDERS[feature]}
+                    rows={9}
+                    className="w-full resize-y rounded-lg border border-input bg-background px-3 py-2.5 text-sm leading-relaxed text-foreground placeholder:text-muted-foreground/70 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
+                  />
+                </>
+              )}
 
               <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
                 <div className="flex flex-wrap items-center gap-2">
