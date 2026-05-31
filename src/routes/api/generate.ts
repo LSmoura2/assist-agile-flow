@@ -91,21 +91,20 @@ async function callModel(opts: { system: string; userInput: string }): Promise<
 
 function isSameOrigin(request: Request): boolean {
   const host = request.headers.get("host");
-  if (!host) return false;
   const origin = request.headers.get("origin");
   const referer = request.headers.get("referer");
-  const check = (val: string | null) => {
-    if (!val) return false;
-    try {
-      return new URL(val).host === host;
-    } catch {
-      return false;
-    }
-  };
-  if (!origin && !referer) return false;
-  if (origin && !check(origin)) return false;
-  if (!origin && referer && !check(referer)) return false;
-  return true;
+  const source = origin ?? referer;
+  if (!source) return true; // no origin header (e.g. server-side) — allow
+  if (!host) return true;
+  try {
+    const sourceHost = new URL(source).host;
+    if (sourceHost === host) return true;
+    // Allow Lovable preview/published domains
+    if (/\.(lovableproject|lovable)\.(app|dev|com)$/.test(sourceHost)) return true;
+    return false;
+  } catch {
+    return false;
+  }
 }
 
 
