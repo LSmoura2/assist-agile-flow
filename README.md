@@ -22,7 +22,7 @@ O AgileAI Assistant ajuda equipas de software com funcionalidades de IA para:
 | Bundler | Vite + @cloudflare/vite-plugin |
 | UI | Radix UI + shadcn/ui + Tailwind CSS |
 | Backend | Cloudflare Workers (src/server.ts) |
-| IA | Anthropic Claude via AI SDK |
+| IA | motor de AI |
 | Package Manager | Bun |
 | Deploy | Wrangler CLI - Cloudflare Workers |
 
