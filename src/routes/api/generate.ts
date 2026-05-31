@@ -2,7 +2,7 @@ import "@tanstack/react-start";
 import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
 import { generateText } from "ai";
-import { createLovableAiGatewayProvider } from "@/lib/ai-gateway";
+import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
 import { FEATURE_IDS, SYSTEM_PROMPTS, type FeatureId } from "@/lib/prompts";
 
 const RequestSchema = z.object({
@@ -10,7 +10,7 @@ const RequestSchema = z.object({
   input: z.string().trim().min(1, "Input is required").max(20000, "Input is too long"),
 });
 
-const MODEL = "google/gemini-3-flash-preview";
+const MODEL = "deepseek-chat";
 
 function validateOutput(
   feature: FeatureId,
@@ -63,15 +63,19 @@ function validateOutput(
 async function callModel(opts: { system: string; userInput: string }): Promise<
   { ok: true; text: string } | { ok: false; status: number; message: string }
 > {
-  const key = process.env.LOVABLE_API_KEY;
+  const key = process.env.DEEPSEEK_API_KEY;
   if (!key) {
-    console.error("generate: LOVABLE_API_KEY not configured");
+    console.error("generate: DEEPSEEK_API_KEY not configured");
     return { ok: false, status: 500, message: "Serviço de IA não disponível." };
   }
   try {
-    const gateway = createLovableAiGatewayProvider(key);
+    const deepseek = createOpenAICompatible({
+      name: "deepseek",
+      baseURL: "https://api.deepseek.com/v1",
+      headers: { Authorization: `Bearer ${key}` },
+    });
     const { text } = await generateText({
-      model: gateway(MODEL),
+      model: deepseek(MODEL),
       system: opts.system,
       prompt: opts.userInput,
       temperature: 0,
