@@ -42,6 +42,165 @@ const ICONS: Record<FeatureId, typeof BookOpen> = {
 };
 
 const EXAMPLES: Partial<Record<FeatureId, { input: string; output: string }>> = {
+  "user-story": {
+    input:
+      "Os utilizadores precisam de poder redefinir a palavra-passe por email caso a tenham esquecido, sem ter de contactar o suporte.",
+    output: `## User Story
+
+**Como** utilizador registado,
+**quero** redefinir a minha palavra-passe através de um email de recuperação,
+**para que** consiga voltar a aceder à conta sem contactar o suporte.
+
+---
+
+## Critérios de Aceitação
+
+**Dado** que estou na página de login,
+**Quando** clico em "Esqueci-me da palavra-passe" e introduzo um email válido associado a uma conta,
+**Então** recebo um email com uma ligação de recuperação válida por 30 minutos.
+
+**Dado** que recebi o email de recuperação,
+**Quando** abro a ligação dentro do prazo e defino uma nova palavra-passe que cumpre as regras de segurança,
+**Então** a palavra-passe é atualizada e sou redirecionado para o login com mensagem de sucesso.
+
+**Dado** que introduzo um email que não está associado a nenhuma conta,
+**Quando** submeto o pedido de recuperação,
+**Então** o sistema apresenta a mesma mensagem genérica de confirmação, sem revelar se o email existe.`,
+  },
+  backlog: {
+    input:
+      "- Adicionar login com Google\n- Corrigir bug crítico no checkout que impede pagamentos\n- Migrar base de dados para nova versão do Postgres\n- Melhorar performance do dashboard\n- Redesenhar página de definições",
+    output: `## Backlog Priorizado
+
+1. **Corrigir bug crítico no checkout que impede pagamentos** — Tipo: Bug | Valor: A | Risco: A | Esforço: B
+   _Justificação: Bloqueia receita direta; correção urgente com esforço reduzido._
+
+2. **Adicionar login com Google** — Tipo: Funcionalidade | Valor: A | Risco: M | Esforço: M
+   _Justificação: Reduz fricção no registo e aumenta conversão de novos utilizadores._
+
+3. **Melhorar performance do dashboard** — Tipo: Melhoria | Valor: M | Risco: B | Esforço: M
+   _Justificação: Impacto positivo na retenção com risco técnico controlado._
+
+4. **Migrar base de dados para nova versão do Postgres** — Tipo: Dívida Técnica | Valor: M | Risco: A | Esforço: A
+   _Justificação: Importante para sustentabilidade mas exige janela de manutenção e plano de rollback._
+
+5. **Redesenhar página de definições** — Tipo: Melhoria | Valor: B | Risco: B | Esforço: M
+   _Justificação: Valor incremental baixo; adiar até libertar capacidade._`,
+  },
+  meeting: {
+    input:
+      "Reunião semanal 28/03 — Presentes: Ana (PO), João (SM), Rita e Pedro (devs). Discutimos o atraso da feature de notificações: a Rita explicou que falta integração com o serviço de email. Decidimos adiar a feature para o próximo sprint. O Pedro vai investigar alternativas até sexta. Ficou em aberto se vamos usar SendGrid ou Mailgun. A Ana lembrou que o cliente quer demo a 15/04.",
+    output: `## Decisões Tomadas
+- Adiar a feature de notificações para o próximo sprint.
+- Manter a data da demo com o cliente a 15/04.
+
+## Ações
+- Pedro — Investigar alternativas de serviço de email (SendGrid vs Mailgun) — até sexta-feira
+- João — Reagendar a feature de notificações no próximo sprint — Prazo: não definido
+- Ana — Confirmar agenda da demo com o cliente — Prazo: não definido
+
+## Pontos em Aberto
+- Escolha entre SendGrid e Mailgun como provedor de email.
+- Impacto do adiamento das notificações no âmbito da demo de 15/04.
+
+## Ações (Numeradas)
+1. Pedro investiga alternativas de serviço de email até sexta-feira.
+2. João reagenda a feature de notificações no próximo sprint.
+3. Ana confirma agenda da demo de 15/04 com o cliente.`,
+  },
+  sprint: {
+    input:
+      "Capacidade da equipa: 25 story points. Itens candidatos:\n- Login com Google (5 SP)\n- Página de perfil do utilizador (8 SP)\n- Corrigir bug do checkout (3 SP)\n- Dashboard de métricas (13 SP)\n- Refactor do módulo de autenticação (8 SP)\nDependência: o dashboard depende do login com Google estar entregue.",
+    output: `## Âmbito do Sprint
+- Corrigir bug do checkout — 3 SP (acumulado: 3)
+- Login com Google — 5 SP (acumulado: 8)
+- Página de perfil do utilizador — 8 SP (acumulado: 16)
+- Refactor do módulo de autenticação — 8 SP (acumulado: 24)
+
+Total: 24 / 25 SP. O dashboard de métricas fica fora por exceder capacidade e depender de itens deste sprint.
+
+## Objetivo do Sprint
+Estabilizar o fluxo de autenticação e desbloquear o checkout para preparar o lançamento do dashboard no sprint seguinte.
+
+## Perguntas para a Retrospetiva
+### O que correu bem
+- Conseguimos isolar o bug do checkout rapidamente?
+- A colaboração entre dev e QA melhorou em relação ao sprint anterior?
+
+### O que melhorar
+- As estimativas dos itens grandes (8+ SP) refletiram a realidade?
+- Como evitar que dependências entre itens só surjam no planning?
+
+### Ações
+- Definir critério de "pronto" mais claro para tarefas de refactor.
+
+## Sprint Review — Guião da Demo
+1. **Introdução (2 min):** contexto do sprint e objetivo.
+2. **Checkout estabilizado (5 min):** demonstração do fluxo de pagamento corrigido.
+3. **Login com Google (5 min):** registo e login end-to-end.
+4. **Perfil do utilizador (5 min):** edição de dados e avatar.
+5. **Refactor de autenticação (3 min):** explicação técnica do impacto.
+6. **Q&A (5 min).**
+7. **Próximos passos:** dashboard de métricas no sprint seguinte.`,
+  },
+  release: {
+    input:
+      "Release v2.4 prevista para sexta. Funcionalidades: novo onboarding (testes 100% verdes), exportação CSV (testes 80%, 1 bug menor de formatação), integração Stripe (testes 95%, 1 bug crítico em webhooks de reembolso). Sem testes de carga. Conformidade GDPR validada.",
+    output: `## Classificação da Release
+**Não recomendada**
+
+## Recomendação Go / No-Go
+**No-Go** para a data prevista. Existe um bug crítico ativo nos webhooks de reembolso do Stripe que pode causar inconsistências financeiras em produção. A release deve ser adiada até resolução e validação, ou o âmbito reduzido removendo a integração Stripe.
+
+## Critérios Bloqueantes
+- Bug crítico nos webhooks de reembolso do Stripe não resolvido.
+- Ausência de testes de carga para a nova integração de pagamentos.
+- Cobertura de testes da exportação CSV abaixo do limiar interno (80%).
+
+## Riscos
+- **Risco:** Reembolsos processados de forma inconsistente em produção.
+  - **Probabilidade x Impacto:** Alto x Alto
+  - **Mitigação:** Corrigir o webhook, adicionar teste de regressão e validar em staging com transações reais de baixo valor.
+
+- **Risco:** Degradação de performance sob carga real no fluxo de pagamento.
+  - **Probabilidade x Impacto:** Médio x Alto
+  - **Mitigação:** Executar testes de carga com k6 ou Locust antes do go-live.
+
+- **Risco:** Formatação incorreta no CSV exportado afeta clientes enterprise.
+  - **Probabilidade x Impacto:** Médio x Médio
+  - **Mitigação:** Corrigir o bug menor e adicionar amostras de validação ao pipeline.`,
+  },
+  tests: {
+    input:
+      "User Story: Como utilizador quero filtrar a lista de encomendas por estado (pendente, enviada, entregue) para encontrar rapidamente o que procuro.\nCritérios:\n- O filtro mostra apenas encomendas no estado selecionado.\n- É possível combinar filtro de estado com pesquisa por número.\n- O filtro persiste durante a sessão.",
+    output: `## Testes Unitários
+Validam a lógica de filtragem isolada do componente, independente da UI e da API.
+
+- **Nome:** filtra encomendas pelo estado selecionado
+- **Pré-condições:** lista mock com 3 encomendas em estados distintos
+- **Passos:** invocar \`filterOrders(orders, { status: "enviada" })\`
+- **Resultado esperado:** devolve apenas a encomenda com estado "enviada"
+
+## Testes de Integração
+Validam a interação entre o componente de filtro, o estado partilhado e a chamada à API.
+
+- **Nome:** combinação de filtro de estado com pesquisa por número
+- **Pré-condições:** API mock devolve 10 encomendas; utilizador autenticado
+- **Passos:** selecionar estado "pendente" e escrever "1234" na pesquisa
+- **Resultado esperado:** a chamada à API inclui \`status=pendente&query=1234\` e a UI mostra apenas resultados correspondentes
+
+## Testes E2E
+Garantem o fluxo completo do utilizador no browser.
+
+- **Nome:** o filtro persiste durante a sessão
+- **Pré-condições:** utilizador autenticado com encomendas em vários estados
+- **Passos:** aplicar filtro "entregue", navegar para outra página e voltar à lista
+- **Resultado esperado:** o filtro "entregue" continua ativo e a lista mantém-se filtrada
+
+## Critérios de Aceitação Mais Críticos a Testar
+- Combinação de filtro de estado com pesquisa por número (maior risco de regressão).
+- Persistência do filtro durante a sessão (envolve estado partilhado entre rotas).`,
+  },
   incident: {
     input:
       "Ontem por volta das 22h o checkout começou a devolver erro 500 para cerca de 30% dos utilizadores europeus. O problema durou 45 minutos e impediu a finalização de encomendas. Após análise dos logs, descobrimos que uma migração recente à base de dados deixou um índice em falta na tabela orders, o que provocou timeouts no serviço de pagamentos. A solução foi recriar o índice e adicionar alerta de latência.",
