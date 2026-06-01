@@ -10,7 +10,7 @@ const RequestSchema = z.object({
   input: z.string().trim().min(1, "Input is required").max(20000, "Input is too long"),
 });
 
-const MODEL = "gemini-2.0-flash";
+const MODEL = "google/gemini-2.5-flash";
 
 function validateOutput(
   feature: FeatureId,
@@ -63,19 +63,19 @@ function validateOutput(
 async function callModel(opts: { system: string; userInput: string }): Promise<
   { ok: true; text: string } | { ok: false; status: number; message: string }
 > {
-  const key = process.env.GEMINI_API_KEY;
+  const key = process.env.LOVABLE_API_KEY;
   if (!key) {
-    console.error("generate: GEMINI_API_KEY not configured");
+    console.error("generate: LOVABLE_API_KEY not configured");
     return { ok: false, status: 500, message: "Serviço de IA não disponível." };
   }
   try {
-    const gemini = createOpenAICompatible({
-      name: "gemini",
-      baseURL: "https://generativelanguage.googleapis.com/v1beta/openai",
+    const lovable = createOpenAICompatible({
+      name: "lovable",
+      baseURL: "https://ai.gateway.lovable.dev/v1",
       headers: { Authorization: `Bearer ${key}` },
     });
     const { text } = await generateText({
-      model: gemini(MODEL),
+      model: lovable(MODEL),
       system: opts.system,
       prompt: opts.userInput,
       temperature: 0,
